@@ -1,14 +1,18 @@
 /**
  * 阿里云百炼 Embedding 模块
  * 使用 text-embedding-v3 模型，1024 维向量
+ *
+ * 注意：Embedding API 可能不在 Coding Plan Pro 套餐中
+ * 如果调用失败，需要优雅降级
  */
 
 import OpenAI from 'openai'
 
 // 阿里云百炼兼容 OpenAI SDK
+// 注意：Embedding 需要使用标准 API，不在 Coding Plan Pro 中
 const client = new OpenAI({
   apiKey: process.env.DASHSCOPE_API_KEY,
-  baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+  baseURL: process.env.DASHSCOPE_BASE_URL
 })
 
 const EMBEDDING_MODEL = 'text-embedding-v3'

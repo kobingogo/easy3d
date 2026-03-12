@@ -8,6 +8,7 @@ export * from './tracer'
 export * from './planner'
 export * from './engine'
 export * from './tools'
+export * from './workflow-store'
 
 // 便捷函数
 import type { Workflow, WorkflowStep, StepInput } from './types'

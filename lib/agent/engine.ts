@@ -158,6 +158,12 @@ export class WorkflowEngine {
         const trimmed = url.trim()
         if (trimmed === '') return false
         if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return false
+        // 检测假 URL 或占位符
+        const lowerUrl = trimmed.toLowerCase()
+        if (lowerUrl.includes('example.com')) return false
+        if (lowerUrl.includes('placeholder')) return false
+        if (lowerUrl.includes('用户') || lowerUrl.includes('提供')) return false
+        if (lowerUrl.includes('requires_user')) return false
         return true
       }
 
@@ -180,7 +186,8 @@ export class WorkflowEngine {
         result.description = userDescription
       }
 
-      return result
+      // 递归解析 result 中的嵌套引用对象
+      return this.resolveNestedReferences(result, previousResults)
     }
 
     // 处理 StepInput 类型
@@ -203,8 +210,12 @@ export class WorkflowEngine {
         break
 
       default:
-        return input
+        // 处理直接传入的对象（可能包含引用）
+        result = { ...input }
     }
+
+    // 递归解析 result 中的引用对象 { type: 'reference', stepId, path }
+    result = this.resolveNestedReferences(result, previousResults)
 
     // 处理 result 对象中的 imageUrl 和 description
     if (typeof result === 'object' && result !== null) {
@@ -214,6 +225,12 @@ export class WorkflowEngine {
         const trimmed = url.trim()
         if (trimmed === '') return false
         if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return false
+        // 检测假 URL 或占位符
+        const lowerUrl = trimmed.toLowerCase()
+        if (lowerUrl.includes('example.com')) return false
+        if (lowerUrl.includes('placeholder')) return false
+        if (lowerUrl.includes('用户') || lowerUrl.includes('提供')) return false
+        if (lowerUrl.includes('requires_user')) return false
         return true
       }
 
@@ -236,15 +253,49 @@ export class WorkflowEngine {
   }
 
   /**
+   * 递归解析嵌套的引用对象
+   */
+  private resolveNestedReferences(obj: any, previousResults: Map<string, StepResult>): any {
+    if (!obj || typeof obj !== 'object') return obj
+
+    // 检查是否是引用对象
+    if (obj.type === 'reference' && obj.stepId && obj.path) {
+      const stepResult = previousResults.get(obj.stepId)
+      const value = this.getNestedValue(stepResult?.result?.data, obj.path)
+      console.log(`[resolveNestedReferences] Resolving reference: stepId=${obj.stepId}, path=${obj.path}, value=`, JSON.stringify(value).slice(0, 200))
+      return value
+    }
+
+    // 递归处理数组和对象
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.resolveNestedReferences(item, previousResults))
+    }
+
+    const result: any = {}
+    for (const key of Object.keys(obj)) {
+      result[key] = this.resolveNestedReferences(obj[key], previousResults)
+    }
+    return result
+  }
+
+  /**
    * 获取嵌套值
    */
   private getNestedValue(obj: any, path: string): any {
-    if (!obj || !path) return obj
+    if (!obj) return obj
+
+    // 特殊处理：空路径或 "." 表示整个对象
+    if (!path || path === '.' || path === '') {
+      return obj
+    }
 
     const keys = path.split('.')
     let result = obj
 
     for (const key of keys) {
+      // 跳过空键（处理 "data." 或 ".data" 等情况）
+      if (key === '') continue
+
       if (result && typeof result === 'object' && key in result) {
         result = result[key]
       } else {

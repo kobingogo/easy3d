@@ -1,6 +1,7 @@
 /**
  * Tripo AI API 封装
  * 文档：https://docs.tripo3d.ai
+ * 支持：image_to_model 和 text_to_model
  */
 
 const TRIPO_API_KEY = process.env.TRIPO_API_KEY!
@@ -35,7 +36,7 @@ export interface TripoTaskStatus {
 }
 
 export interface CreateTaskOptions {
-  imageUrl: string
+  imageUrl?: string
   prompt?: string
   quality?: 'standard' | 'hd'
 }
@@ -44,9 +45,42 @@ export interface CreateTaskOptions {
 
 /**
  * 创建 3D 生成任务
+ * 支持图片生成和文本生成两种模式
  */
 export async function createTask(options: CreateTaskOptions): Promise<TripoTaskResponse> {
   const { imageUrl, prompt, quality = 'standard' } = options
+
+  // 验证参数
+  if (!imageUrl && !prompt) {
+    throw new Error('需要提供 imageUrl 或 prompt')
+  }
+
+  // 根据是否有图片选择模式
+  const mode = quality === 'hd' ? 'preview' : 'quick'
+
+  let requestBody: any
+
+  if (imageUrl) {
+    // 图片转 3D 模式
+    requestBody = {
+      type: 'image_to_model',
+      file: {
+        type: 'url',
+        url: imageUrl,
+      },
+      mode,
+      ...(prompt && { prompt }),
+    }
+  } else {
+    // 文本转 3D 模式
+    requestBody = {
+      type: 'text_to_model',
+      prompt: prompt || '',
+      mode,
+    }
+  }
+
+  console.log(`[Tripo] Creating task with ${imageUrl ? 'image' : 'text'} mode`)
 
   const response = await fetch(`${TRIPO_BASE_URL}/task`, {
     method: 'POST',
@@ -54,22 +88,26 @@ export async function createTask(options: CreateTaskOptions): Promise<TripoTaskR
       'Authorization': `Bearer ${TRIPO_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      type: 'image_to_model',
-      file: {
-        type: 'url',
-        url: imageUrl,
-      },
-      mode: quality === 'hd' ? 'preview' : 'quick',
-      ...(prompt && { prompt }),
-    }),
+    body: JSON.stringify(requestBody),
   })
 
+  const data = await response.json()
+
   if (!response.ok) {
-    throw new Error(`Tripo API error: ${response.status}`)
+    console.error('[Tripo] API error:', data)
+
+    // 友好错误信息
+    let errorMessage = `Tripo API error: ${response.status}`
+    if (data.code === 2010 || data.message?.includes('credit')) {
+      errorMessage = 'Tripo API 余额不足，请充值后重试'
+    } else if (data.message) {
+      errorMessage = `Tripo API error: ${data.message}`
+    }
+
+    throw new Error(errorMessage)
   }
 
-  return response.json()
+  return data
 }
 
 /**
@@ -83,7 +121,8 @@ export async function getTaskStatus(taskId: string): Promise<TripoTaskStatus> {
   })
 
   if (!response.ok) {
-    throw new Error(`Tripo API error: ${response.status}`)
+    const data = await response.json()
+    throw new Error(`Tripo API error: ${response.status} - ${data.msg || 'Unknown error'}`)
   }
 
   return response.json()
@@ -136,4 +175,11 @@ export async function downloadModel(modelUrl: string): Promise<ArrayBuffer> {
     throw new Error(`Failed to download model: ${response.status}`)
   }
   return response.arrayBuffer()
+}
+
+/**
+ * 检查 API Key 是否配置
+ */
+export function isTripoConfigured(): boolean {
+  return !!TRIPO_API_KEY
 }

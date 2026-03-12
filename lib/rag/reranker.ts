@@ -6,9 +6,10 @@
 import OpenAI from 'openai'
 import type { SearchResult, RerankResult } from './types'
 
+// 使用百炼 Coding Plan Pro API
 const client = new OpenAI({
   apiKey: process.env.DASHSCOPE_API_KEY,
-  baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+  baseURL: process.env.DASHSCOPE_BASE_URL
 })
 
 /**

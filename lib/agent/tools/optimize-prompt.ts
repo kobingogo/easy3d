@@ -92,14 +92,19 @@ export const optimizePromptTool: Tool<{
     const { analysis, style = 'minimal', platform } = input
 
     try {
-      // 1. RAG 检索相关知识
-      const knowledge = await searchKnowledge(
-        `${analysis.subcategory} ${style} ${analysis.keywords.slice(0, 3).join(' ')}`,
-        {
-          limit: 3,
-          enableRerank: true
-        }
-      )
+      // 1. RAG 检索相关知识（可选，失败时跳过）
+      let knowledge: any[] = []
+      try {
+        knowledge = await searchKnowledge(
+          `${analysis.subcategory} ${style} ${analysis.keywords.slice(0, 3).join(' ')}`,
+          {
+            limit: 3,
+            enableRerank: true
+          }
+        )
+      } catch (ragError: any) {
+        console.log(`[optimize_prompt] RAG search failed: ${ragError.message}, continuing without RAG`)
+      }
 
       // 2. 获取风格配置
       const styleConfig = STYLE_DESCRIPTIONS[style] || STYLE_DESCRIPTIONS.minimal

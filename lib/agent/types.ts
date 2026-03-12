@@ -188,6 +188,7 @@ export interface GenerationResult {
   status: 'pending' | 'processing' | 'completed' | 'failed'
   modelUrl?: string
   thumbnailUrl?: string
+  mode?: 'image_to_model' | 'text_to_model'
 }
 
 // ==================== 质量检查结果 ====================

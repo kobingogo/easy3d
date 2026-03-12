@@ -20,7 +20,9 @@ const BAILIAN_BASE_URL = 'https://coding.dashscope.aliyuncs.com/v1'
 // 单例客户端
 const client = new OpenAI({
   apiKey: process.env.DASHSCOPE_API_KEY,
-  baseURL: BAILIAN_BASE_URL
+  baseURL: process.env.DASHSCOPE_BASE_URL,
+  timeout: 120000,  // 2 分钟超时
+  maxRetries: 2
 })
 
 // 默认模型配置

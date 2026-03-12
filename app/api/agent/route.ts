@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ReActPlanner, WorkflowEngine, createWorkflow } from '@/lib/agent'
+import { saveWorkflowStatus, getWorkflowStatus, cleanupExpiredWorkflows } from '@/lib/agent/workflow-store'
 import type { WorkflowStep, StepInput } from '@/lib/agent'
+
+// 定期清理过期工作流
+cleanupExpiredWorkflows()
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,13 +26,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 执行工作流
+    // 执行工作流（同步）
     if (action === 'execute') {
       if (!workflowData) {
         return NextResponse.json({ error: 'Workflow data is required' }, { status: 400 })
       }
 
-      // 构建工作流
       const steps: WorkflowStep[] = workflowData.steps.map((step: any) => ({
         id: step.id,
         tool: step.tool,
@@ -42,13 +45,11 @@ export async function POST(request: NextRequest) {
         workflowData.description
       )
 
-      // 执行
       const engine = new WorkflowEngine()
       const startTime = Date.now()
       const { workflow: completedWorkflow, results } = await engine.execute(workflow, imageUrl, workflowData.description)
       const duration = Date.now() - startTime
 
-      // 格式化结果
       const formattedResults = Array.from(results.entries()).map(([stepId, result]) => ({
         stepId,
         status: result.status,
@@ -68,8 +69,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 一键执行（规划 + 执行）
-    if (action === 'run') {
+    // 异步启动工作流
+    if (action === 'start') {
       if (!userInput) {
         return NextResponse.json({ error: 'User input is required' }, { status: 400 })
       }
@@ -77,7 +78,6 @@ export async function POST(request: NextRequest) {
       const planner = new ReActPlanner()
       const plan = await planner.plan(userInput)
 
-      // 构建工作流步骤
       const steps: WorkflowStep[] = plan.steps.map((step: any) => ({
         id: step.id,
         tool: step.tool,
@@ -91,13 +91,80 @@ export async function POST(request: NextRequest) {
         plan.reasoning
       )
 
-      // 执行
+      // 保存初始状态
+      const workflowStatus = {
+        id: workflow.id,
+        status: 'pending' as const,
+        currentStep: 0,
+        totalSteps: steps.length,
+        startedAt: new Date(),
+        workflow
+      }
+      saveWorkflowStatus(workflowStatus)
+
+      // 异步执行（不等待）
+      executeWorkflowAsync(workflow, imageUrl, userInput)
+
+      // 立即返回 workflow ID
+      return NextResponse.json({
+        success: true,
+        workflowId: workflow.id,
+        plan,
+        message: 'Workflow started. Poll /api/agent?workflowId=xxx for status.'
+      })
+    }
+
+    // 查询工作流状态
+    if (action === 'status') {
+      const workflowId = body.workflowId
+      if (!workflowId) {
+        return NextResponse.json({ error: 'workflowId is required' }, { status: 400 })
+      }
+
+      const status = getWorkflowStatus(workflowId)
+      if (!status) {
+        return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
+      }
+
+      return NextResponse.json({
+        success: true,
+        ...status,
+        results: status.results ? Array.from(status.results.entries()).map(([stepId, result]) => ({
+          stepId,
+          status: result.status,
+          data: result.result?.data,
+          error: result.result?.error
+        })) : []
+      })
+    }
+
+    // 一键执行（同步，用于简单请求）
+    if (action === 'run') {
+      if (!userInput) {
+        return NextResponse.json({ error: 'User input is required' }, { status: 400 })
+      }
+
+      const planner = new ReActPlanner()
+      const plan = await planner.plan(userInput)
+
+      const steps: WorkflowStep[] = plan.steps.map((step: any) => ({
+        id: step.id,
+        tool: step.tool,
+        input: { type: 'static', value: step.input } as StepInput,
+        description: step.description
+      }))
+
+      const workflow = createWorkflow(
+        `Agent: ${userInput.slice(0, 50)}`,
+        steps,
+        plan.reasoning
+      )
+
       const engine = new WorkflowEngine()
       const startTime = Date.now()
       const { workflow: completedWorkflow, results } = await engine.execute(workflow, imageUrl, userInput)
       const duration = Date.now() - startTime
 
-      // 格式化结果
       const formattedResults = Array.from(results.entries()).map(([stepId, result]) => {
         const step = completedWorkflow.steps.find((s: any) => s.id === stepId)
         return {
@@ -126,7 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      error: 'Invalid action. Use: plan, execute, run'
+      error: 'Invalid action. Use: plan, execute, run, start, status'
     }, { status: 400 })
 
   } catch (error) {
@@ -142,6 +209,26 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
+    const workflowId = searchParams.get('workflowId')
+
+    // 查询工作流状态（GET 方式）
+    if (workflowId) {
+      const status = getWorkflowStatus(workflowId)
+      if (!status) {
+        return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
+      }
+
+      return NextResponse.json({
+        success: true,
+        ...status,
+        results: status.results ? Array.from(status.results.entries()).map(([stepId, result]) => ({
+          stepId,
+          status: result.status,
+          data: result.result?.data,
+          error: result.result?.error
+        })) : []
+      })
+    }
 
     // 获取工具列表
     if (action === 'tools') {
@@ -161,7 +248,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      error: 'Invalid action. Use: tools'
+      error: 'Invalid action. Use: tools or provide workflowId'
     }, { status: 400 })
 
   } catch (error) {
@@ -170,5 +257,46 @@ export async function GET(request: NextRequest) {
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
+  }
+}
+
+/**
+ * 异步执行工作流
+ */
+async function executeWorkflowAsync(
+  workflow: any,
+  imageUrl: string | undefined,
+  userInput: string
+): Promise<void> {
+  const engine = new WorkflowEngine()
+
+  // 更新状态为 running
+  const runningStatus = getWorkflowStatus(workflow.id)
+  if (runningStatus) {
+    runningStatus.status = 'running'
+    saveWorkflowStatus(runningStatus)
+  }
+
+  try {
+    const { workflow: completedWorkflow, results } = await engine.execute(workflow, imageUrl, userInput)
+
+    // 更新状态为 completed
+    const finalStatus = getWorkflowStatus(workflow.id)
+    if (finalStatus) {
+      finalStatus.status = completedWorkflow.status as 'completed' | 'failed'
+      finalStatus.completedAt = new Date()
+      finalStatus.results = results
+      finalStatus.workflow = completedWorkflow
+      saveWorkflowStatus(finalStatus)
+    }
+  } catch (error: any) {
+    // 更新状态为 failed
+    const failedStatus = getWorkflowStatus(workflow.id)
+    if (failedStatus) {
+      failedStatus.status = 'failed'
+      failedStatus.completedAt = new Date()
+      failedStatus.error = error.message
+      saveWorkflowStatus(failedStatus)
+    }
   }
 }
