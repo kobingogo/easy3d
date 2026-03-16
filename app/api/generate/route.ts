@@ -67,14 +67,14 @@ export async function POST(request: NextRequest) {
         console.log(`Task ${taskId} progress: ${progress}%`)
       }
     }).then(async (result) => {
-      if (result.status === 'success' && result.result?.files) {
-        // 下载模型文件并存储
-        const glbFile = result.result.files.find(f => f.file_type === 'GLB')
-        const thumbnailFile = result.result.files.find(f => f.file_type === 'rendered_image')
+      if (result.data.status === 'success') {
+        // 提取模型 URL
+        const modelUrl = result.data.output?.pbr_model || result.data.result?.pbr_model?.url
+        const thumbnailUrl = result.data.output?.rendered_image || result.data.result?.rendered_image?.url
 
-        if (glbFile) {
+        if (modelUrl) {
           try {
-            const modelBuffer = await downloadModel(glbFile.file_url)
+            const modelBuffer = await downloadModel(modelUrl)
             const modelFileName = `${modelRecord.id}.glb`
 
             await supabase.storage
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
               .from('models')
               .update({
                 model_3d_url: urlData.publicUrl,
-                thumbnail_url: thumbnailFile?.file_url,
+                thumbnail_url: thumbnailUrl,
                 status: 'completed'
               })
               .eq('id', modelRecord.id)

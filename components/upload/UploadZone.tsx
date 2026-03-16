@@ -8,13 +8,15 @@ interface UploadZoneProps {
   maxFiles?: number
   maxSize?: number // MB
   accept?: string[]
+  disabled?: boolean
 }
 
 export function UploadZone({
   onUpload,
   maxFiles = 10,
   maxSize = 10,
-  accept = ['image/jpeg', 'image/png', 'image/webp']
+  accept = ['image/jpeg', 'image/png', 'image/webp'],
+  disabled = false
 }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -90,15 +92,15 @@ export function UploadZone({
         relative border-2 border-dashed rounded-lg p-8
         transition-colors cursor-pointer
         ${isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-        ${isUploading ? 'pointer-events-none opacity-50' : ''}
+        ${isUploading || disabled ? 'pointer-events-none opacity-50' : ''}
       `}
       onDragOver={(e) => {
         e.preventDefault()
         setIsDragging(true)
       }}
       onDragLeave={() => setIsDragging(false)}
-      onDrop={handleDrop}
-      onClick={() => document.getElementById('file-input')?.click()}
+      onDrop={disabled ? undefined : handleDrop}
+      onClick={disabled ? undefined : () => document.getElementById('file-input')?.click()}
     >
       <input
         id="file-input"
@@ -107,6 +109,7 @@ export function UploadZone({
         accept={accept.join(',')}
         multiple={maxFiles > 1}
         onChange={handleFileSelect}
+        disabled={disabled}
       />
 
       <div className="flex flex-col items-center justify-center gap-4 text-center">

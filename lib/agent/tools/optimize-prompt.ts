@@ -1,63 +1,60 @@
 /**
  * 提示词优化工具
- * 基于 RAG 检索和商品分析，生成优化的 3D 生成提示词
+ * 使用 LLM 深度优化 3D 生成提示词，支持平台风格适配
  */
 
-import type { Tool, OptimizedPrompt, ProductAnalysis, StyleTemplate, ToolContext, ToolResult } from '../types'
+import type { Tool, OptimizedPrompt, StyleTemplate, ToolContext, ToolResult } from '../types'
+import type { ExtendedProductAnalysis } from './analyze-product'
 import { generate } from '../llm'
 import { searchKnowledge } from '@/lib/rag/search'
 
-// 提示词模板
-const PROMPT_TEMPLATES: Record<StyleTemplate, string> = {
-  minimal: `Professional product photography of {product}, clean white background, soft diffused lighting, minimal composition, focus on product details, 4K resolution, e-commerce ready`,
-
-  luxury: `Luxury product showcase of {product}, elegant gradient background with soft pink tones, premium studio lighting with soft shadows, gold accents, 8K resolution, photorealistic, high-end commercial photography`,
-
-  tech: `High-tech product render of {product}, futuristic dark background with blue LED accents, metallic reflective surface, dramatic lighting, 8K resolution, hyperrealistic, product visualization, tech showcase`,
-
-  natural: `Natural product photography of {product}, soft natural daylight from window, organic background with green plants, wooden surface, lifestyle product shot, clean and fresh aesthetic, 4K resolution`,
-
-  trendy: `Trendy product showcase of {product}, vibrant gradient background, dynamic angle, colorful lighting, modern aesthetic, social media ready, 4K resolution, eye-catching composition, Gen Z style`
-}
-
-// 风格描述映射
-const STYLE_DESCRIPTIONS: Record<StyleTemplate, { lighting: string; background: string; camera: string }> = {
-  minimal: {
-    lighting: '柔和的漫射光，均匀照亮产品',
-    background: '纯白或浅灰色背景，简洁干净',
-    camera: '正面或45度角，突出产品轮廓'
+// 平台风格配置
+const PLATFORM_STYLES: Record<string, {
+  styleHint: string
+  keywords: string[]
+  description: string
+}> = {
+  xiaohongshu: {
+    styleHint: 'lifestyle, Instagram-worthy, aesthetic, soft natural lighting, cozy atmosphere',
+    keywords: ['种草', '生活化', '氛围感', '精致'],
+    description: '小红书风格：生活化、种草感、氛围感强'
   },
-  luxury: {
-    lighting: '精致的影棚灯光，营造高级感',
-    background: '渐变背景，粉色或金色点缀',
-    camera: '微距特写，展示细节质感'
+  taobao: {
+    styleHint: 'clean product photography, e-commerce ready, pure white background, professional catalog',
+    keywords: ['专业', '干净', '商品展示'],
+    description: '淘宝风格：专业、干净、突出商品'
   },
-  tech: {
-    lighting: '蓝色LED光效，科技感照明',
-    background: '深色背景，金属质感反射',
-    camera: '俯视或侧面，展示设计线条'
+  douyin: {
+    styleHint: 'dynamic, trendy, eye-catching, vibrant colors, social media viral',
+    keywords: ['潮流', '动感', '吸睛'],
+    description: '抖音风格：潮流、动感、吸引眼球'
   },
-  natural: {
-    lighting: '自然窗光，柔和温暖',
-    background: '木纹或绿植背景，自然氛围',
-    camera: '生活化角度，展示使用场景'
-  },
-  trendy: {
-    lighting: '彩色灯光，动感能量',
-    background: '渐变色块，潮流元素',
-    camera: '动态角度，吸引眼球'
+  amazon: {
+    styleHint: 'professional product photography, pure white background, product centered, catalog style',
+    keywords: ['专业', '简洁', '标准化'],
+    description: '亚马逊风格：专业、简洁、标准化'
   }
 }
 
+// 风格模板（作为备用）
+const STYLE_TEMPLATES: Record<StyleTemplate, string> = {
+  minimal: 'clean white background, soft diffused lighting, minimal composition',
+  luxury: 'elegant gradient background, premium studio lighting, gold accents',
+  tech: 'futuristic dark background, blue LED accents, metallic reflective surface',
+  natural: 'natural daylight, organic background, wooden surface, lifestyle',
+  trendy: 'vibrant gradient background, dynamic angle, colorful lighting'
+}
+
 export const optimizePromptTool: Tool<{
-  analysis: ProductAnalysis
+  analysis?: ExtendedProductAnalysis
   style?: StyleTemplate
-  platform?: 'taobao' | 'xiaohongshu' | 'douyin' | 'amazon'
+  platform?: 'xiaohongshu' | 'taobao' | 'douyin' | 'amazon'
+  userDescription?: string
 }, OptimizedPrompt> = {
   type: 'function',
   function: {
     name: 'optimize_prompt',
-    description: '基于商品分析结果和RAG知识库，生成优化的3D展示提示词',
+    description: '使用 LLM 深度优化 3D 生成提示词，结合商品分析和平台风格生成最佳提示词',
     parameters: {
       type: 'object',
       properties: {
@@ -68,95 +65,247 @@ export const optimizePromptTool: Tool<{
         style: {
           type: 'string',
           enum: ['minimal', 'luxury', 'tech', 'natural', 'trendy'],
-          description: '展示风格',
-          default: 'minimal'
+          description: '展示风格'
         },
         platform: {
           type: 'string',
-          enum: ['taobao', 'xiaohongshu', 'douyin', 'amazon'],
+          enum: ['xiaohongshu', 'taobao', 'douyin', 'amazon'],
           description: '目标平台'
+        },
+        userDescription: {
+          type: 'string',
+          description: '用户原始描述'
         }
-      },
-      required: ['analysis']
+      }
     }
   },
 
   config: {
-    timeout: 15000,
+    timeout: 20000,
     retryable: true,
     maxRetries: 2
   },
 
   handler: async (input, context: ToolContext) => {
     const startTime = Date.now()
-    const { analysis, style = 'minimal', platform } = input
+    const { analysis, style, platform: inputPlatform, userDescription } = input
+
+    console.log('[optimize_prompt] Input:', JSON.stringify({ analysis, style, inputPlatform, userDescription }).slice(0, 500))
 
     try {
-      // 1. RAG 检索相关知识（可选，失败时跳过）
-      let knowledge: any[] = []
+      // 1. 确定平台（优先级：输入参数 > analysis.platform > 默认）
+      const platform = inputPlatform || analysis?.platform || null
+      console.log('[optimize_prompt] Platform:', platform)
+
+      // 2. 确定风格（优先级：输入参数 > analysis.suggestedStyle > 根据平台推断 > 默认）
+      let finalStyle: StyleTemplate = style || analysis?.suggestedStyle || 'minimal'
+      if (!style && platform) {
+        // 根据平台推断风格
+        const platformStyleMap: Record<string, StyleTemplate> = {
+          xiaohongshu: 'natural',
+          taobao: 'minimal',
+          douyin: 'trendy',
+          amazon: 'minimal'
+        }
+        finalStyle = platformStyleMap[platform] || 'minimal'
+      }
+      console.log('[optimize_prompt] Final style:', finalStyle)
+
+      // 3. 构建商品描述
+      let productDesc = ''
+      if (analysis?.subcategory && analysis.subcategory !== '商品') {
+        const keywords = analysis.keywords?.slice(0, 3).join(' ') || ''
+        productDesc = `${analysis.subcategory} ${keywords}`.trim()
+      } else if (userDescription) {
+        productDesc = userDescription
+      } else {
+        productDesc = 'product'
+      }
+      console.log('[optimize_prompt] Product description:', productDesc)
+
+      // 4. 使用 LLM 深度优化提示词
+      const optimizationPrompt = buildOptimizationPrompt(productDesc, analysis, platform, finalStyle)
+      console.log('[optimize_prompt] LLM prompt:', optimizationPrompt.slice(0, 300))
+
+      const result = await generate({
+        model: 'qwen3.5-plus',
+        messages: [{
+          role: 'user',
+          content: optimizationPrompt
+        }],
+        responseFormat: { type: 'json_object' }
+      })
+
+      console.log('[optimize_prompt] LLM response:', result.content.slice(0, 500))
+
+      // 5. 解析 LLM 响应
+      const optimized = parseOptimizationResponse(result.content, finalStyle, platform)
+
+      // 6. RAG 知识检索（可选增强）
       try {
-        knowledge = await searchKnowledge(
-          `${analysis.subcategory} ${style} ${analysis.keywords.slice(0, 3).join(' ')}`,
-          {
-            limit: 3,
-            enableRerank: true
-          }
-        )
-      } catch (ragError: any) {
-        console.log(`[optimize_prompt] RAG search failed: ${ragError.message}, continuing without RAG`)
+        const knowledge = await searchKnowledge(`${productDesc} ${finalStyle}`, { limit: 2 })
+        optimized.knowledgeReferences = knowledge.map(k => k.entry?.id).filter(Boolean)
+      } catch (e) {
+        console.log('[optimize_prompt] RAG search skipped')
       }
 
-      // 2. 获取风格配置
-      const styleConfig = STYLE_DESCRIPTIONS[style] || STYLE_DESCRIPTIONS.minimal
-      const template = PROMPT_TEMPLATES[style] || PROMPT_TEMPLATES.minimal
+      console.log('[optimize_prompt] Final prompt:', optimized.prompt)
 
-      // 3. 生成优化提示词
-      const productDesc = `${analysis.subcategory} ${analysis.keywords.slice(0, 3).join(' ')}`
-
-      const prompt = template
-        .replace('{product}', productDesc)
-        .replace('{lighting}', styleConfig.lighting)
-        .replace('{background}', styleConfig.background)
-
-      // 4. 根据平台调整
-      let finalPrompt = prompt
-      if (platform === 'xiaohongshu') {
-        finalPrompt += ', lifestyle photography, social media aesthetic'
-      } else if (platform === 'amazon') {
-        finalPrompt += ', pure white background, product centered, professional catalog shot'
-      }
-
-      const result: OptimizedPrompt = {
-        prompt: finalPrompt,
-        style,
-        lighting: styleConfig.lighting,
-        background: styleConfig.background,
-        camera: styleConfig.camera,
-        keywords: analysis.keywords,
-        knowledgeReferences: knowledge.map(k => k.entry.id)
-      }
-
-      context.tracer.endStepSuccess(context.stepId, result)
+      context.tracer.endStepSuccess(context.stepId, optimized, {
+        tokensUsed: result.usage.totalTokens,
+        modelUsed: 'qwen3.5-plus'
+      })
 
       return {
         success: true,
-        data: result,
+        data: optimized,
         metadata: {
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
+          tokensUsed: result.usage.totalTokens,
+          modelUsed: 'qwen3.5-plus'
         }
       }
 
     } catch (error: any) {
+      console.error('[optimize_prompt] Error:', error.message)
       context.tracer.endStepFailed(context.stepId, error.message)
 
+      // 降级：返回基础提示词
+      const fallbackPrompt = generateFallbackPrompt(analysis, style, userDescription)
+
       return {
-        success: false,
-        error: {
-          code: 'PROMPT_OPTIMIZATION_FAILED',
-          message: error.message,
-          recoverable: true
+        success: true,  // 不阻止流程继续
+        data: fallbackPrompt,
+        metadata: {
+          duration: Date.now() - startTime,
+          fallback: true
         }
       }
     }
+  }
+}
+
+/**
+ * 构建 LLM 优化提示词
+ */
+function buildOptimizationPrompt(
+  productDesc: string,
+  analysis: ExtendedProductAnalysis | undefined,
+  platform: string | null,
+  style: StyleTemplate
+): string {
+  const platformInfo = platform ? PLATFORM_STYLES[platform] : null
+  const styleTemplate = STYLE_TEMPLATES[style]
+
+  return `你是一个专业的 3D 产品渲染提示词专家。请为以下商品生成最佳的 3D 渲染提示词。
+
+【商品信息】
+- 商品描述：${productDesc}
+- 类别：${analysis?.category || 'other'}
+- 子类别：${analysis?.subcategory || '商品'}
+- 风格标签：${analysis?.style?.join('、') || '无'}
+- 目标用户：${analysis?.targetAudience || '通用'}
+${platformInfo ? `- 目标平台：${platformInfo.description}` : ''}
+
+【要求】
+1. 提示词必须准确描述商品本身，让 AI 能生成正确的商品类型
+2. 必须包含商品的英文名称（用于 Tripo AI 理解）
+3. 结合风格要求：${styleTemplate}
+${platformInfo ? `4. 适配平台风格：${platformInfo.styleHint}` : ''}
+
+【输出格式】
+返回 JSON：
+{
+  "prompt": "英文提示词，用于 3D 生成",
+  "productType": "商品的英文类型名称（如 handbag, lipstick, sneaker）",
+  "style": "使用的风格",
+  "lighting": "灯光描述（中文）",
+  "background": "背景描述（中文）",
+  "camera": "相机角度描述（中文）",
+  "keywords": ["关键特征词"],
+  "confidence": 0.9
+}
+
+【重要提示】
+- prompt 中的商品类型必须明确、具体（如 women's handbag 而非 bag）
+- 避免使用模糊词汇（如 product, item）
+- 确保生成的模型类型与用户需求完全匹配
+
+只返回 JSON，不要其他内容。`
+}
+
+/**
+ * 解析 LLM 优化响应
+ */
+function parseOptimizationResponse(
+  content: string,
+  style: StyleTemplate,
+  platform: string | null
+): OptimizedPrompt {
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      return {
+        prompt: parsed.prompt || generateDefaultPrompt(parsed.productType, style, platform),
+        style: parsed.style || style,
+        lighting: parsed.lighting || '柔和的漫射光',
+        background: parsed.background || '纯色背景',
+        camera: parsed.camera || '正面展示',
+        keywords: parsed.keywords || [],
+        knowledgeReferences: [],
+        productType: parsed.productType,
+        confidence: parsed.confidence || 0.8
+      }
+    }
+  } catch (e) {
+    console.error('[optimize_prompt] Parse error:', e)
+  }
+
+  // 返回默认值
+  return {
+    prompt: generateDefaultPrompt('product', style, platform),
+    style,
+    lighting: '柔和的漫射光',
+    background: '纯色背景',
+    camera: '正面展示',
+    keywords: [],
+    confidence: 0.6
+  }
+}
+
+/**
+ * 生成默认提示词
+ */
+function generateDefaultPrompt(
+  productType: string,
+  style: StyleTemplate,
+  platform: string | null
+): string {
+  const styleTemplate = STYLE_TEMPLATES[style]
+  const platformStyle = platform ? PLATFORM_STYLES[platform]?.styleHint : ''
+
+  return `Professional 3D product render of ${productType}, ${styleTemplate}${platformStyle ? ', ' + platformStyle : ''}, high quality, photorealistic, 4K resolution`
+}
+
+/**
+ * 生成降级提示词
+ */
+function generateFallbackPrompt(
+  analysis: ExtendedProductAnalysis | undefined,
+  style: StyleTemplate | undefined,
+  userDescription: string | undefined
+): OptimizedPrompt {
+  const productType = analysis?.subcategory || userDescription || 'product'
+  const finalStyle = style || analysis?.suggestedStyle || 'minimal'
+
+  return {
+    prompt: `Professional 3D product render of ${productType}, ${STYLE_TEMPLATES[finalStyle]}, high quality, 4K resolution`,
+    style: finalStyle,
+    lighting: '柔和的漫射光',
+    background: '纯色背景',
+    camera: '正面展示',
+    keywords: analysis?.keywords || [],
+    confidence: 0.5
   }
 }

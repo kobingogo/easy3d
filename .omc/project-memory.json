@@ -1,0 +1,350 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773588463704,
+  "projectRoot": "/Users/bingo/.openclaw/workspace/projects/easy3d",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "15.2.3",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "19.0.0",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.0.0",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "next dev --turbopack",
+      "build": "next build",
+      "start": "next start",
+      "lint": "next lint",
+      "type-check": "tsc --noEmit",
+      "start:all": "./scripts/start.sh",
+      "stop:all": "./scripts/stop.sh",
+      "status": "./scripts/status.sh",
+      "build:knowledge": "npx tsx scripts/build-knowledge.ts"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase",
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "app",
+      "components",
+      "docs",
+      "lib",
+      "scripts"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 3,
+      "lastAccessed": 1773588463601,
+      "keyFiles": [
+        "globals.css",
+        "layout.tsx",
+        "page.tsx"
+      ]
+    },
+    "components": {
+      "path": "components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1773588463602,
+      "keyFiles": []
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 6,
+      "lastAccessed": 1773588463637,
+      "keyFiles": [
+        "ACCOUNT_SETUP_GUIDE.md",
+        "AGENT_ARCHITECTURE_ANALYSIS.md",
+        "TASKS.md",
+        "agent-tools-design.md",
+        "evaluation-design.md"
+      ]
+    },
+    "lib": {
+      "path": "lib",
+      "purpose": "Library code",
+      "fileCount": 1,
+      "lastAccessed": 1773588463638,
+      "keyFiles": [
+        "utils.ts"
+      ]
+    },
+    "qdrant_storage": {
+      "path": "qdrant_storage",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1773588463639,
+      "keyFiles": [
+        "raft_state.json"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 5,
+      "lastAccessed": 1773588463639,
+      "keyFiles": [
+        "build-knowledge.ts",
+        "knowledge-base.ts",
+        "start.sh",
+        "status.sh",
+        "stop.sh"
+      ]
+    },
+    "supabase": {
+      "path": "supabase",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1773588463639,
+      "keyFiles": [
+        "models-table.sql",
+        "storage-setup.sql"
+      ]
+    },
+    "app/api": {
+      "path": "app/api",
+      "purpose": "API routes",
+      "fileCount": 0,
+      "lastAccessed": 1773588463640,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "TASKS.md",
+      "accessCount": 135,
+      "lastAccessed": 1773643785500,
+      "type": "file"
+    },
+    {
+      "path": "app/fine-tune/page.tsx",
+      "accessCount": 107,
+      "lastAccessed": 1773652053345,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/tools/optimize-prompt.ts",
+      "accessCount": 13,
+      "lastAccessed": 1773652200646,
+      "type": "file"
+    },
+    {
+      "path": "docs/TASKS.md",
+      "accessCount": 6,
+      "lastAccessed": 1773651185094,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 5,
+      "lastAccessed": 1773642271438,
+      "type": "directory"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 4,
+      "lastAccessed": 1773652881289,
+      "type": "file"
+    },
+    {
+      "path": "app/api/generate/route.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773644866185,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773653422201,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773653422308,
+      "type": "file"
+    },
+    {
+      "path": "lib/tripo/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773653422363,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/engine.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773654001983,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/tools/generate-3d.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773644115796,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/tools/analyze-product.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773644115908,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773644883314,
+      "type": "file"
+    },
+    {
+      "path": "app/api/optimize/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773652127561,
+      "type": "file"
+    },
+    {
+      "path": "app/page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773653422253,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/planner.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773654001932,
+      "type": "file"
+    },
+    {
+      "path": "app/api/agent/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773654002034,
+      "type": "file"
+    },
+    {
+      "path": "scripts/test-agent-workflow.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773656727478,
+      "type": "file"
+    },
+    {
+      "path": "PRD-v2.0-AI-Frontend.md",
+      "accessCount": 1,
+      "lastAccessed": 1773633895424,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/qdrant.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773634171953,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/search.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773634172119,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/embedding.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773634172172,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/tools/quality-check.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773634235431,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/tools/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773634310878,
+      "type": "file"
+    },
+    {
+      "path": "docs/AGENT_ARCHITECTURE_ANALYSIS.md",
+      "accessCount": 1,
+      "lastAccessed": 1773643967106,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1773653048604,
+      "type": "file"
+    },
+    {
+      "path": ".env.local",
+      "accessCount": 1,
+      "lastAccessed": 1773653354981,
+      "type": "file"
+    },
+    {
+      "path": ".env.local.example",
+      "accessCount": 1,
+      "lastAccessed": 1773653355032,
+      "type": "file"
+    },
+    {
+      "path": "app/agent/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773654002088,
+      "type": "file"
+    },
+    {
+      "path": "app/api/upload/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773655609498,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

@@ -167,18 +167,16 @@ export class WorkflowEngine {
         return true
       }
 
-      // 填充有效的图片 URL
-      if ('imageUrl' in result && !isValidImageUrl(result.imageUrl) && imageUrl && isValidImageUrl(imageUrl)) {
-        result.imageUrl = imageUrl
+      // 【修复】如果传入了有效的 imageUrl，填充它
+      if (imageUrl && isValidImageUrl(imageUrl)) {
+        if (!result.imageUrl || !isValidImageUrl(result.imageUrl)) {
+          result.imageUrl = imageUrl
+        }
       }
 
-      // 如果 imageUrl 不是有效的 URL，清空它并设置 description
-      if ('imageUrl' in result && !isValidImageUrl(result.imageUrl)) {
-        result.imageUrl = undefined  // 清空无效的 URL
-        // 如果没有 description，使用用户描述
-        if (!result.description && userDescription) {
-          result.description = userDescription
-        }
+      // 如果 imageUrl 不是有效的 URL，清空它
+      if (result.imageUrl && !isValidImageUrl(result.imageUrl)) {
+        delete result.imageUrl
       }
 
       // 确保有 description（用于 analyze_product）
@@ -234,13 +232,18 @@ export class WorkflowEngine {
         return true
       }
 
-      // 如果 imageUrl 不是有效的 URL，清空它并设置 description
-      if ('imageUrl' in result && !isValidImageUrl(result.imageUrl)) {
-        delete result.imageUrl  // 删除无效的 URL
-        // 如果没有 description，使用用户描述
-        if (!result.description && userDescription) {
-          result.description = userDescription
+      // 【修复】如果传入了有效的 imageUrl，填充它
+      if (imageUrl && isValidImageUrl(imageUrl)) {
+        // 如果 result 中没有 imageUrl 或 imageUrl 无效，使用传入的 imageUrl
+        if (!result.imageUrl || !isValidImageUrl(result.imageUrl)) {
+          result.imageUrl = imageUrl
+          console.log(`[resolveInput] Injected imageUrl: ${imageUrl}`)
         }
+      }
+
+      // 如果 imageUrl 不是有效的 URL，清空它
+      if (result.imageUrl && !isValidImageUrl(result.imageUrl)) {
+        delete result.imageUrl
       }
 
       // 确保有 description（用于 analyze_product）
@@ -262,7 +265,9 @@ export class WorkflowEngine {
     if (obj.type === 'reference' && obj.stepId && obj.path) {
       const stepResult = previousResults.get(obj.stepId)
       const value = this.getNestedValue(stepResult?.result?.data, obj.path)
-      console.log(`[resolveNestedReferences] Resolving reference: stepId=${obj.stepId}, path=${obj.path}, value=`, JSON.stringify(value).slice(0, 200))
+      console.log(`[resolveNestedReferences] Resolving reference: stepId=${obj.stepId}, path=${obj.path}`)
+      console.log(`[resolveNestedReferences] stepResult exists: ${!!stepResult}, result exists: ${!!stepResult?.result}, data exists: ${!!stepResult?.result?.data}`)
+      console.log(`[resolveNestedReferences] Resolved value:`, JSON.stringify(value).slice(0, 300))
       return value
     }
 

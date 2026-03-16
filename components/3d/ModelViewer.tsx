@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef } from 'react'
+import { Suspense, useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Environment, Center } from '@react-three/drei'
 import * as THREE from 'three'
@@ -12,8 +12,25 @@ interface ModelViewerProps {
   className?: string
 }
 
+/**
+ * 获取代理后的模型 URL
+ * 解决 Tripo CDN 的 CORS 问题
+ */
+function getProxiedUrl(url: string): string {
+  if (!url) return url
+
+  // 检查是否是 Tripo CDN URL
+  if (url.includes('tripo3d.com') || url.includes('tripo-data')) {
+    // 使用代理端点
+    return `/api/proxy/model?url=${encodeURIComponent(url)}`
+  }
+
+  return url
+}
+
 function Model({ url }: { url: string }) {
-  const { scene } = useGLTF(url)
+  const proxiedUrl = useMemo(() => getProxiedUrl(url), [url])
+  const { scene } = useGLTF(proxiedUrl)
   const modelRef = useRef<THREE.Group>(null)
 
   // 自动旋转
@@ -80,5 +97,5 @@ export function ModelViewer({
   )
 }
 
-// 预加载模型
-useGLTF.preload('/demo-model.glb')
+// 预加载模型（仅在 URL 提供时）
+// useGLTF.preload() 需要在模型 URL 确定后调用

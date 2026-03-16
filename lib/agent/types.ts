@@ -178,6 +178,8 @@ export interface OptimizedPrompt {
   camera: string
   keywords: string[]
   knowledgeReferences?: string[]
+  productType?: string      // 商品英文类型（如 handbag, lipstick）
+  confidence?: number       // 置信度
 }
 
 // ==================== 生成结果 ====================

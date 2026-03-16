@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ReActPlanner, WorkflowEngine, createWorkflow } from '@/lib/agent'
-import { saveWorkflowStatus, getWorkflowStatus, cleanupExpiredWorkflows } from '@/lib/agent/workflow-store'
+import { saveWorkflowStatus, getWorkflowStatus, cleanupExpiredWorkflows, type WorkflowStatus as StoredWorkflowStatus } from '@/lib/agent/workflow-store'
 import type { WorkflowStep, StepInput } from '@/lib/agent'
 
 // 定期清理过期工作流
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       )
 
       // 保存初始状态
-      const workflowStatus = {
+      const workflowStatus: StoredWorkflowStatus = {
         id: workflow.id,
         status: 'pending' as const,
         currentStep: 0,

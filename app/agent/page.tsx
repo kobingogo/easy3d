@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Cpu, Zap, Clock, CheckCircle, XCircle, Loader2, ChevronDown, ChevronRight, Play, RefreshCw, StopCircle } from 'lucide-react'
+import { ModelViewer } from '@/components/3d/ModelViewer'
+import {
+  Cpu, Zap, CheckCircle, XCircle, Loader2, ChevronDown, ChevronRight,
+  Play, RefreshCw, StopCircle, Download, Box, ExternalLink,
+  AlertTriangle, ThumbsUp, ThumbsDown
+} from 'lucide-react'
 
 interface Tool {
   name: string
@@ -238,14 +243,63 @@ export default function AgentPage() {
     return `${minutes}分${remainingSeconds}秒`
   }
 
+  // 获取生成的 3D 模型数据
+  const getGeneratedModel = useCallback(() => {
+    if (!workflowStatus?.results) return null
+
+    const generateStep = workflowStatus.results.find(
+      r => r.status === 'success' && r.data?.modelUrl
+    )
+
+    return generateStep?.data || null
+  }, [workflowStatus?.results])
+
+  // 获取质量检查结果
+  const getQualityResult = useCallback(() => {
+    if (!workflowStatus?.results) return null
+
+    const qualityStep = workflowStatus.results.find(
+      r => r.stepId === 'step_4' && r.status === 'success'
+    )
+
+    return qualityStep?.data || null
+  }, [workflowStatus?.results])
+
+  // 下载模型
+  const handleDownloadModel = useCallback(async () => {
+    const modelData = getGeneratedModel()
+    if (!modelData?.modelUrl) return
+
+    try {
+      const downloadUrl = (modelData.modelUrl.includes('tripo3d.com') || modelData.modelUrl.includes('tripo-data'))
+        ? `/api/proxy/model?url=${encodeURIComponent(modelData.modelUrl)}`
+        : modelData.modelUrl
+
+      const response = await fetch(downloadUrl)
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `3d-model-${Date.now()}.glb`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download error:', error)
+    }
+  }, [getGeneratedModel])
+
   const isRunning = workflowStatus?.status === 'running' || workflowStatus?.status === 'pending'
+  const modelData = getGeneratedModel()
+  const qualityResult = getQualityResult()
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Agent 控制台</h1>
         <p className="text-muted-foreground mb-8">
-          输入一句话，Agent 自动完成 3D 生成全流程
+          输入一句话，Agent 自动完成 3D 生成全流程（含质量检查）
         </p>
 
         <Tabs defaultValue="console" className="space-y-6">
@@ -343,7 +397,6 @@ export default function AgentPage() {
                   {workflowStatus.workflow?.trace && (
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <span>Token: {workflowStatus.workflow.trace.totalTokens}</span>
-                      <span>成本: ¥{workflowStatus.workflow.trace.totalCost.toFixed(4)}</span>
                     </div>
                   )}
                 </CardContent>
@@ -387,6 +440,126 @@ export default function AgentPage() {
                         </div>
                       )
                     })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 质量检查结果 */}
+            {workflowStatus?.status === 'completed' && qualityResult && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {qualityResult.typeMatch?.matched ? (
+                      <ThumbsUp className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                    )}
+                    质量检查结果
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* 类型匹配 */}
+                    {qualityResult.typeMatch && (
+                      <div className={`p-4 rounded-lg ${qualityResult.typeMatch.matched ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {qualityResult.typeMatch.matched ? (
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                          )}
+                          <span className="font-medium">
+                            {qualityResult.typeMatch.matched ? '类型匹配' : '类型不匹配'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <p>预期类型：{qualityResult.typeMatch.expectedType}</p>
+                          <p>检测类型：{qualityResult.typeMatch.detectedType}</p>
+                          <p>置信度：{Math.round(qualityResult.typeMatch.confidence * 100)}%</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 质量分数 */}
+                    <div className="grid grid-cols-4 gap-4">
+                      {qualityResult.dimensions && Object.entries(qualityResult.dimensions).map(([key, value]) => (
+                        <div key={key} className="text-center">
+                          <div className="text-2xl font-bold">{value as number}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{key}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 综合评分 */}
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <span>综合评分</span>
+                      <span className="text-2xl font-bold">{qualityResult.overallScore}</span>
+                    </div>
+
+                    {/* 建议 */}
+                    {qualityResult.recommendation && (
+                      <p className="text-sm text-muted-foreground">{qualityResult.recommendation}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 3D 模型预览 */}
+            {workflowStatus?.status === 'completed' && modelData?.modelUrl && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Box className="h-5 w-5" />
+                    3D 模型预览
+                  </CardTitle>
+                  <CardDescription>
+                    模型已生成完成，可以在线预览或下载
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-lg overflow-hidden">
+                      <ModelViewer modelUrl={modelData.modelUrl} className="w-full h-full" />
+                    </div>
+
+                    {/* 缩略图 */}
+                    {modelData.thumbnailUrl && (
+                      <div className="flex gap-2">
+                        <img
+                          src={modelData.thumbnailUrl}
+                          alt="模型缩略图"
+                          className="w-20 h-20 rounded object-cover border"
+                        />
+                      </div>
+                    )}
+
+                    {/* 操作按钮 */}
+                    <div className="flex gap-3">
+                      <Button className="flex-1" onClick={handleDownloadModel}>
+                        <Download className="mr-2 h-4 w-4" />
+                        下载 GLB 模型
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const viewUrl = (modelData.modelUrl.includes('tripo3d.com') || modelData.modelUrl.includes('tripo-data'))
+                            ? `/api/proxy/model?url=${encodeURIComponent(modelData.modelUrl)}`
+                            : modelData.modelUrl
+                          window.open(viewUrl, '_blank')
+                        }}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        新窗口查看
+                      </Button>
+                    </div>
+
+                    {/* 模型信息 */}
+                    <div className="text-sm text-muted-foreground">
+                      <p>生成模式：{modelData.mode === 'image_to_model' ? '图片转3D' : '文字转3D'}</p>
+                      {modelData.taskId && <p>任务 ID：{modelData.taskId}</p>}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

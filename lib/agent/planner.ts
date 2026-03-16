@@ -52,9 +52,10 @@ ${toolDefinitions.map((t: any) => `- ${t.function.name}: ${t.function.descriptio
 { "参数名": { "type": "reference", "stepId": "前序步骤ID", "path": "." } }
 
 工具参数说明：
-- analyze_product: 需要 imageUrl 或 description
-- optimize_prompt: 需要 analysis（商品分析结果）
-- generate_3d: 需要 imageUrl 和 prompt
+- analyze_product: 需要 description
+- optimize_prompt: 需要 analysis 和 userDescription
+- generate_3d: 需要 prompt（来自 optimize_prompt 的输出）
+- quality_check: 需要 modelUrl, thumbnailUrl, expectedProductType
 
 注意：步骤 ID 使用 step_1, step_2 等格式`
       }],
@@ -69,24 +70,27 @@ ${toolDefinitions.map((t: any) => `- ${t.function.name}: ${t.function.descriptio
   }
 
   /**
-   * 获取默认计划（简单生成流程）
+   * 获取默认计划（四步生成流程）
    */
   getDefaultPlan(userInput: string): ExecutionPlan {
     return {
-      reasoning: '使用标准3D生成流程',
+      reasoning: '使用标准3D生成流程：分析商品 → 优化提示词 → 生成模型 → 质量检查',
       steps: [
         {
           id: 'step_1',
           tool: 'analyze_product',
-          description: '分析商品',
+          description: '分析商品特征',
           input: { description: userInput },
           dependencies: []
         },
         {
           id: 'step_2',
           tool: 'optimize_prompt',
-          description: '优化展示提示词',
-          input: { analysis: { type: 'reference', stepId: 'step_1', path: '.' } },
+          description: '优化生成提示词',
+          input: {
+            analysis: { type: 'reference', stepId: 'step_1', path: '.' },
+            userDescription: userInput
+          },
           dependencies: ['step_1']
         },
         {
@@ -97,9 +101,21 @@ ${toolDefinitions.map((t: any) => `- ${t.function.name}: ${t.function.descriptio
             prompt: { type: 'reference', stepId: 'step_2', path: '.' }
           },
           dependencies: ['step_2']
+        },
+        {
+          id: 'step_4',
+          tool: 'quality_check',
+          description: '质量检查与验证',
+          input: {
+            modelUrl: { type: 'reference', stepId: 'step_3', path: 'modelUrl' },
+            thumbnailUrl: { type: 'reference', stepId: 'step_3', path: 'thumbnailUrl' },
+            expectedProductType: { type: 'reference', stepId: 'step_2', path: 'productType' },
+            originalDescription: userInput
+          },
+          dependencies: ['step_3', 'step_2']
         }
       ],
-      estimatedTime: 90
+      estimatedTime: 120
     }
   }
 

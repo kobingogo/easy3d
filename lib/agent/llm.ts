@@ -17,13 +17,20 @@ import type { Tool } from './types'
 // 百炼 Coding Plan Pro 专用 Base URL
 const BAILIAN_BASE_URL = 'https://coding.dashscope.aliyuncs.com/v1'
 
-// 单例客户端
-const client = new OpenAI({
-  apiKey: process.env.DASHSCOPE_API_KEY,
-  baseURL: process.env.DASHSCOPE_BASE_URL,
-  timeout: 120000,  // 2 分钟超时
-  maxRetries: 2
-})
+// 延迟初始化客户端
+let _client: OpenAI | null = null
+
+function getClient() {
+  if (!_client) {
+    _client = new OpenAI({
+      apiKey: process.env.DASHSCOPE_API_KEY,
+      baseURL: process.env.DASHSCOPE_BASE_URL || BAILIAN_BASE_URL,
+      timeout: 120000,  // 2 分钟超时
+      maxRetries: 2
+    })
+  }
+  return _client
+}
 
 // 默认模型配置
 const DEFAULT_TEXT_MODEL = 'qwen3.5-plus'
@@ -82,7 +89,7 @@ export interface VisionResult {
 export async function generate(options: GenerateOptions): Promise<GenerateResult> {
   const { model = DEFAULT_TEXT_MODEL, messages, tools, temperature = 0.7, responseFormat } = options
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model,
     messages: messages as any,
     temperature,
@@ -121,7 +128,7 @@ export async function generate(options: GenerateOptions): Promise<GenerateResult
 export async function vision(options: VisionOptions): Promise<VisionResult> {
   const { model = DEFAULT_VISION_MODEL, imageUrls, prompt } = options
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model,
     messages: [{
       role: 'user',
