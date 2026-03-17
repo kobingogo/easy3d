@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Easy3D 一键启动脚本
-# 启动所有必需服务：Qdrant、Next.js 开发服务器
+# 启动 Next.js 开发服务器
+# 注：使用 Qdrant Cloud，无需本地 Docker
 
 set -e
 
@@ -30,7 +31,7 @@ print_title() {
 
 # 检查环境变量
 check_env() {
-    echo -e "${YELLOW}[1/5] 检查环境配置...${NC}"
+    echo -e "${YELLOW}[1/3] 检查环境配置...${NC}"
 
     if [ ! -f "$PROJECT_DIR/.env.local" ]; then
         echo -e "${RED}错误: .env.local 文件不存在${NC}"
@@ -39,13 +40,32 @@ check_env() {
         exit 1
     fi
 
-    # 检查必要的 API Key
-    if ! grep -q "DASHSCOPE_API_KEY=." "$PROJECT_DIR/.env.local" 2>/dev/null; then
-        echo -e "${RED}错误: DASHSCOPE_API_KEY 未配置${NC}"
+    # 检查必要的 API Keys
+    local missing_keys=()
+
+    if ! grep -q "DASHSCOPE_API_KEY_V1=." "$PROJECT_DIR/.env.local" 2>/dev/null; then
+        missing_keys+=("DASHSCOPE_API_KEY_V1")
+    fi
+
+    if ! grep -q "QDRANT_URL=." "$PROJECT_DIR/.env.local" 2>/dev/null; then
+        missing_keys+=("QDRANT_URL")
+    fi
+
+    if ! grep -q "QDRANT_API_KEY=." "$PROJECT_DIR/.env.local" 2>/dev/null; then
+        missing_keys+=("QDRANT_API_KEY")
+    fi
+
+    if [ ${#missing_keys[@]} -gt 0 ]; then
+        echo -e "${RED}错误: 以下配置缺失:${NC}"
+        for key in "${missing_keys[@]}"; do
+            echo "  - $key"
+        done
         exit 1
     fi
 
     echo -e "${GREEN}✓ 环境配置检查通过${NC}"
+    echo -e "  - DashScope V1 API (embedding + qwen-plus)"
+    echo -e "  - Qdrant Cloud (向量数据库)"
     echo ""
 }
 
@@ -60,7 +80,7 @@ check_port() {
 
 # 停止已有服务
 stop_existing() {
-    echo -e "${YELLOW}[2/5] 检查并停止已有服务...${NC}"
+    echo -e "${YELLOW}[2/3] 检查并停止已有服务...${NC}"
 
     # 停止 Next.js
     if pgrep -f "next dev" > /dev/null; then
@@ -83,35 +103,9 @@ stop_existing() {
     echo ""
 }
 
-# 启动 Qdrant
-start_qdrant() {
-    echo -e "${YELLOW}[3/5] 启动 Qdrant 向量数据库...${NC}"
-
-    if command -v docker &> /dev/null; then
-        if docker ps | grep -q easy3d-qdrant; then
-            echo -e "${GREEN}✓ Qdrant 已在运行${NC}"
-        else
-            echo "  启动 Qdrant 容器..."
-            cd "$PROJECT_DIR"
-            docker compose up -d 2>/dev/null || {
-                echo -e "${YELLOW}⚠ Docker 启动失败，RAG 功能可能不可用${NC}"
-                echo "  请确保 Docker 已启动"
-            }
-
-            if docker ps | grep -q easy3d-qdrant; then
-                echo -e "${GREEN}✓ Qdrant 启动成功 (http://localhost:6333)${NC}"
-            fi
-        fi
-    else
-        echo -e "${YELLOW}⚠ Docker 未安装，跳过 Qdrant 启动${NC}"
-        echo "  RAG 知识库功能将不可用"
-    fi
-    echo ""
-}
-
 # 启动 Next.js
 start_nextjs() {
-    echo -e "${YELLOW}[4/5] 启动 Next.js 开发服务器...${NC}"
+    echo -e "${YELLOW}[3/3] 启动 Next.js 开发服务器...${NC}"
 
     cd "$PROJECT_DIR"
 
@@ -154,28 +148,12 @@ start_nextjs() {
     fi
 }
 
-# 构建知识库（可选）
-build_knowledge() {
-    echo -e "${YELLOW}[5/5] 检查知识库...${NC}"
-
-    # 检查 Qdrant 是否运行
-    if curl -s http://localhost:6333/collections/product-knowledge 2>/dev/null | grep -q "result"; then
-        echo -e "${GREEN}✓ 知识库已存在${NC}"
-    else
-        echo -e "${YELLOW}  知识库未初始化${NC}"
-        echo "  构建命令: npx tsx scripts/build-knowledge.ts"
-    fi
-    echo ""
-}
-
 # 主流程
 main() {
     print_title
     check_env
     stop_existing
-    start_qdrant
     start_nextjs
-    build_knowledge
 }
 
 # 运行

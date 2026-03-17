@@ -9,11 +9,30 @@ import { vectorSearch } from './qdrant'
 import { rerankSearchResults } from './reranker'
 import type { KnowledgeCategory, SearchResult, SearchOptions } from './types'
 
-// 使用百炼 Coding Plan Pro API
-const client = new OpenAI({
-  apiKey: process.env.DASHSCOPE_API_KEY,
-  baseURL: process.env.DASHSCOPE_BASE_URL
-})
+// Lazy initialization - client created on first use, not at module load time
+// This ensures env vars are loaded before client creation
+let _client: OpenAI | null = null
+
+/**
+ * Get or create the LLM client (lazy initialization)
+ * Uses DashScope V1 API for qwen-plus access
+ */
+function getClient(): OpenAI {
+  if (_client) {
+    return _client
+  }
+
+  // Prefer V1 API (has qwen-plus access), fallback to Coding Plan
+  _client = new OpenAI({
+    apiKey: process.env.DASHSCOPE_API_KEY_V1 || process.env.DASHSCOPE_API_KEY,
+    baseURL: process.env.DASHSCOPE_BASE_URL_V1 || process.env.DASHSCOPE_BASE_URL
+  })
+
+  const provider = process.env.DASHSCOPE_API_KEY_V1 ? 'DashScope V1' : 'DashScope Coding Plan'
+  console.log(`[Search] LLM client initialized with ${provider}`)
+
+  return _client
+}
 
 /**
  * 知识库检索
@@ -25,7 +44,7 @@ export async function searchKnowledge(
 
   const {
     limit = 5,
-    threshold = 0.7,
+    threshold = 0.5,  // Lowered from 0.7 to account for semantic similarity variation in Chinese text
     enableRerank = true,
     ...filterOptions
   } = options
@@ -83,6 +102,7 @@ export async function suggestDisplay(
   )
 
   // 2. LLM 生成
+  const client = getClient()
   const response = await client.chat.completions.create({
     model: 'qwen-plus',
     messages: [{
@@ -128,6 +148,7 @@ export async function askKnowledge(
   })
 
   // 2. LLM 生成答案
+  const client = getClient()
   const response = await client.chat.completions.create({
     model: 'qwen-plus',
     messages: [{

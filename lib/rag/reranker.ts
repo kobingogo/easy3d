@@ -6,14 +6,32 @@
 import OpenAI from 'openai'
 import type { SearchResult, RerankResult } from './types'
 
-// 使用百炼 Coding Plan Pro API
-const client = new OpenAI({
-  apiKey: process.env.DASHSCOPE_API_KEY,
-  baseURL: process.env.DASHSCOPE_BASE_URL
-})
+// Lazy initialization - client created on first use, not at module load time
+// This ensures env vars are loaded before client creation
+let _client: OpenAI | null = null
 
 /**
- * 使用 qwen-plus 对文档相关性打分
+ * Get or create the reranker client (lazy initialization)
+ * Uses DashScope V1 API (supports qwen-plus model)
+ * Coding Plan does not support qwen-plus, must use standard API
+ */
+function getClient(): OpenAI {
+  if (_client) {
+    return _client
+  }
+
+  _client = new OpenAI({
+    apiKey: process.env.DASHSCOPE_API_KEY_V1 || process.env.DASHSCOPE_API_KEY,
+    baseURL: process.env.DASHSCOPE_BASE_URL_V1 || process.env.DASHSCOPE_BASE_URL
+  })
+
+  console.log('[Reranker] Client initialized with DashScope API')
+
+  return _client
+}
+
+/**
+ * 使用 qwen3-vl-rerank 对文档相关性打分
  * @param query 查询文本
  * @param documents 文档列表
  * @param topK 返回前 K 个结果
@@ -25,6 +43,8 @@ export async function rerank(
 ): Promise<RerankResult[]> {
 
   if (documents.length === 0) return []
+
+  const client = getClient()
 
   // 文档过长时截断
   const truncatedDocs = documents.map(doc =>

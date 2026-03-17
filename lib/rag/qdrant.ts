@@ -3,21 +3,71 @@
  */
 
 import { QdrantClient } from '@qdrant/js-client-rest'
+import { createHash } from 'crypto'
 import type { KnowledgeEntry, KnowledgeCategory, SearchResult } from './types'
 
 const COLLECTION_NAME = 'product-knowledge'
 const VECTOR_SIZE = 1024
 
-// Qdrant 客户端配置
-const client = new QdrantClient({
-  url: process.env.QDRANT_URL || 'http://localhost:6333',
-  apiKey: process.env.QDRANT_API_KEY
-})
+// UUID namespace for deterministic ID conversion
+const KNOWLEDGE_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8' // UUID namespace for DNS
+
+/**
+ * 将字符串 ID 转换为确定性 UUID v5
+ * Qdrant Cloud 要求 point ID 必须是 UUID 或无符号整数
+ */
+function stringToUuid(id: string): string {
+  // 使用 SHA-1 生成 20 字节哈希（UUID v5 要求）
+  const hash = createHash('sha1')
+    .update(KNOWLEDGE_NAMESPACE + id)
+    .digest()
+
+  // 设置 UUID v5 版本标志（第 6 字节高 4 位 = 5）
+  hash[6] = (hash[6] & 0x0f) | 0x50
+  // 设置 UUID 变体标志（第 8 字节高 2 位 = 10）
+  hash[8] = (hash[8] & 0x3f) | 0x80
+
+  // 格式化为 UUID 字符串
+  const hex = hash.toString('hex')
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32)
+  ].join('-')
+}
+
+// Lazy initialization - client created on first use, not at module load time
+// This ensures env vars are loaded before client creation
+let _client: QdrantClient | null = null
+
+/**
+ * Get or create the Qdrant client (lazy initialization)
+ */
+function getClient(): QdrantClient {
+  if (_client) {
+    return _client
+  }
+
+  const url = process.env.QDRANT_URL || 'http://localhost:6333'
+  const apiKey = process.env.QDRANT_API_KEY
+
+  _client = new QdrantClient({
+    url,
+    apiKey
+  })
+
+  console.log(`[Qdrant] Connecting to ${url}${apiKey ? ' with API key' : ' (no auth)'}`)
+
+  return _client
+}
 
 /**
  * 初始化 Collection
  */
 export async function initCollection(): Promise<void> {
+  const client = getClient()
   const collections = await client.getCollections()
 
   if (!collections.collections.find(c => c.name === COLLECTION_NAME)) {
@@ -29,12 +79,40 @@ export async function initCollection(): Promise<void> {
     })
     console.log(`Collection ${COLLECTION_NAME} created`)
   }
+
+  // 创建 payload 索引（Qdrant Cloud 要求过滤前必须创建索引）
+  try {
+    await client.createPayloadIndex(COLLECTION_NAME, {
+      wait: true,
+      field_name: 'category',
+      field_schema: 'keyword'
+    })
+    console.log('Payload index created for: category')
+  } catch (e: any) {
+    if (!e.message?.includes('already exists')) {
+      console.log('Note: category index may already exist')
+    }
+  }
+
+  try {
+    await client.createPayloadIndex(COLLECTION_NAME, {
+      wait: true,
+      field_name: 'tags',
+      field_schema: 'keyword'
+    })
+    console.log('Payload index created for: tags')
+  } catch (e: any) {
+    if (!e.message?.includes('already exists')) {
+      console.log('Note: tags index may already exist')
+    }
+  }
 }
 
 /**
  * 检查 Collection 是否存在
  */
 export async function collectionExists(): Promise<boolean> {
+  const client = getClient()
   const collections = await client.getCollections()
   return collections.collections.some(c => c.name === COLLECTION_NAME)
 }
@@ -44,6 +122,7 @@ export async function collectionExists(): Promise<boolean> {
  */
 export async function getCollectionInfo() {
   try {
+    const client = getClient()
     return await client.getCollection(COLLECTION_NAME)
   } catch {
     return null
@@ -54,10 +133,12 @@ export async function getCollectionInfo() {
  * 插入知识条目
  */
 export async function upsertEntries(entries: KnowledgeEntry[]): Promise<void> {
+  const client = getClient()
   const points = entries.map(entry => ({
-    id: entry.id,
+    id: stringToUuid(entry.id),  // Qdrant Cloud requires UUID format
     vector: entry.vector!,
     payload: {
+      originalId: entry.id,  // Store original ID for reference
       text: entry.text,
       category: entry.category,
       tags: entry.tags,
@@ -79,6 +160,7 @@ export async function upsertEntries(entries: KnowledgeEntry[]): Promise<void> {
  * 删除知识条目
  */
 export async function deleteEntries(ids: string[]): Promise<void> {
+  const client = getClient()
   await client.delete(COLLECTION_NAME, {
     wait: true,
     points: ids
@@ -117,6 +199,7 @@ export async function vectorSearch(
     })
   }
 
+  const client = getClient()
   const response = await client.search(COLLECTION_NAME, {
     vector: queryVector,
     limit,
@@ -158,6 +241,7 @@ export async function getAllEntries(options: {
     }]
   } : undefined
 
+  const client = getClient()
   const response = await client.scroll(COLLECTION_NAME, {
     limit,
     offset,
@@ -200,6 +284,7 @@ export async function getStats(): Promise<{
 
   const byCategory: Record<KnowledgeCategory, number> = {} as any
 
+  const client = getClient()
   for (const category of categories) {
     const result = await client.scroll(COLLECTION_NAME, {
       limit: 1,

@@ -30,28 +30,18 @@ async function buildKnowledgeBase() {
 
   console.log('DASHSCOPE_API_KEY 已配置 ✓')
 
-  // 3. 检查 Qdrant 连接
-  console.log('\n检查 Qdrant 连接...')
-  try {
-    const exists = await collectionExists()
-    if (exists) {
-      console.log('Collection 已存在 ✓')
-      const currentStats = await getStats()
-      console.log(`当前条目数: ${currentStats.total}`)
-    } else {
-      console.log('Collection 不存在，将创建新 Collection')
-    }
-  } catch (error) {
-    console.error('无法连接 Qdrant，请确保 Qdrant 服务正在运行')
-    console.error('启动命令: docker-compose up -d')
-    console.error(error)
-    process.exit(1)
-  }
-
-  // 4. 初始化 Collection
+  // 3. 初始化 Collection（必须在 getStats 之前，确保索引存在）
   console.log('\n初始化 Collection...')
   await initCollection()
   console.log('Collection 初始化完成 ✓')
+
+  // 4. 检查当前状态
+  try {
+    const currentStats = await getStats()
+    console.log(`当前条目数: ${currentStats.total}`)
+  } catch (error) {
+    console.log('Collection 为空，准备写入数据')
+  }
 
   // 5. 生成向量
   console.log('\n生成 Embedding 向量...')
