@@ -286,18 +286,19 @@ export async function getStats(): Promise<{
 
   const client = getClient()
   for (const category of categories) {
-    const result = await client.scroll(COLLECTION_NAME, {
-      limit: 1,
-      with_payload: false,
-      with_vector: false,
-      filter: {
-        must: [{
-          key: 'category',
-          match: { value: category }
-        }]
-      }
-    })
-    byCategory[category] = result.points.length
+    try {
+      const result = await client.count(COLLECTION_NAME, {
+        filter: {
+          must: [{
+            key: 'category',
+            match: { value: category }
+          }]
+        }
+      })
+      byCategory[category] = result.count
+    } catch {
+      byCategory[category] = 0
+    }
   }
 
   return {

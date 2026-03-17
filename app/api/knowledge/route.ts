@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchKnowledge, askKnowledge, suggestDisplay } from '@/lib/rag/search'
-import { getStats, getCollectionInfo } from '@/lib/rag/qdrant'
+import { getStats, getCollectionInfo, getAllEntries } from '@/lib/rag/qdrant'
+import type { KnowledgeCategory } from '@/lib/rag/types'
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,8 +24,28 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // 获取知识条目列表
+    if (action === 'list') {
+      const category = searchParams.get('category') as KnowledgeCategory | null
+      const limit = parseInt(searchParams.get('limit') || '20')
+      const offset = parseInt(searchParams.get('offset') || '0')
+
+      const { entries, total } = await getAllEntries({
+        category: category || undefined,
+        limit,
+        offset
+      })
+
+      return NextResponse.json({
+        success: true,
+        entries,
+        total,
+        category: category || 'all'
+      })
+    }
+
     return NextResponse.json({
-      error: 'Invalid action. Use: stats'
+      error: 'Invalid action. Use: stats, list'
     }, { status: 400 })
 
   } catch (error) {

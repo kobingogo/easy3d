@@ -6,6 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Database, Search, Plus, Loader2, Sparkles } from 'lucide-react'
 
+interface KnowledgeEntry {
+  id: string
+  text: string
+  category: string
+  tags: string[]
+  keywords: string[]
+  priority: number
+  source: string
+  examples?: string[]
+}
+
 interface SearchResult {
   entry: {
     id: string
@@ -31,6 +42,9 @@ export default function KnowledgePage() {
   const [latency, setLatency] = useState<number | null>(null)
   const [answer, setAnswer] = useState<string | null>(null)
   const [answerLoading, setAnswerLoading] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [entries, setEntries] = useState<KnowledgeEntry[]>([])
+  const [entriesLoading, setEntriesLoading] = useState(false)
 
   // 搜索知识
   const handleSearch = async () => {
@@ -104,6 +118,24 @@ export default function KnowledgePage() {
       }
     } catch (error) {
       console.error('Stats error:', error)
+    }
+  }
+
+  // 获取知识条目列表
+  const fetchEntries = async (category: string) => {
+    setEntriesLoading(true)
+    setSelectedCategory(category)
+
+    try {
+      const res = await fetch(`/api/knowledge?action=list&category=${category}&limit=50`)
+      const data = await res.json()
+      if (data.success) {
+        setEntries(data.entries)
+      }
+    } catch (error) {
+      console.error('Fetch entries error:', error)
+    } finally {
+      setEntriesLoading(false)
     }
   }
 
@@ -253,19 +285,39 @@ export default function KnowledgePage() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant={selectedCategory === 'product_category' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchEntries('product_category')}
+                    >
                       商品品类 ({stats?.byCategory?.product_category || 50})
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant={selectedCategory === 'scene_design' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchEntries('scene_design')}
+                    >
                       场景设计 ({stats?.byCategory?.scene_design || 30})
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant={selectedCategory === 'lighting' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchEntries('lighting')}
+                    >
                       光照摄影 ({stats?.byCategory?.lighting || 20})
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant={selectedCategory === 'style_template' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchEntries('style_template')}
+                    >
                       风格模板 ({stats?.byCategory?.style_template || 20})
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant={selectedCategory === 'platform_spec' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchEntries('platform_spec')}
+                    >
                       平台规范 ({stats?.byCategory?.platform_spec || 10})
                     </Button>
                   </div>
@@ -277,9 +329,55 @@ export default function KnowledgePage() {
                     </Button>
                   </div>
 
-                  <div className="text-center py-8 text-muted-foreground">
-                    选择分类查看知识条目
-                  </div>
+                  {/* 条目列表 */}
+                  {entriesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : entries.length > 0 ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {entries.map((entry) => (
+                        <Card key={entry.id} className="bg-muted/30">
+                          <CardContent className="py-3">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-xs text-muted-foreground">
+                                {categoryLabels[entry.category] || entry.category}
+                              </span>
+                              <div className="flex gap-2 text-xs">
+                                <span className="bg-primary/10 px-2 py-0.5 rounded">
+                                  优先级: {entry.priority}
+                                </span>
+                                <span className="bg-muted px-2 py-0.5 rounded">
+                                  {entry.source === 'llm-generated' ? 'AI生成' : '手动添加'}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-sm mb-2">{entry.text}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {entry.tags.map((tag) => (
+                                <span key={tag} className="text-xs bg-primary/10 px-2 py-0.5 rounded">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                            {entry.examples && entry.examples.length > 0 && (
+                              <div className="mt-2 text-xs text-muted-foreground">
+                                示例: {entry.examples.join('、')}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : selectedCategory ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      该分类暂无知识条目
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      选择分类查看知识条目
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

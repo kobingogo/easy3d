@@ -166,15 +166,27 @@
       "type": "file"
     },
     {
-      "path": "lib/rag/embedding.ts",
-      "accessCount": 17,
-      "lastAccessed": 1773728311434,
+      "path": "lib/rag/qdrant.ts",
+      "accessCount": 18,
+      "lastAccessed": 1773739276676,
       "type": "file"
     },
     {
-      "path": "lib/rag/qdrant.ts",
-      "accessCount": 14,
-      "lastAccessed": 1773727807061,
+      "path": "lib/rag/embedding.ts",
+      "accessCount": 18,
+      "lastAccessed": 1773739297427,
+      "type": "file"
+    },
+    {
+      "path": "app/knowledge/page.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1773730589364,
+      "type": "file"
+    },
+    {
+      "path": "docs/PRD-v3.0.md",
+      "accessCount": 8,
+      "lastAccessed": 1773736575020,
       "type": "file"
     },
     {
@@ -184,33 +196,69 @@
       "type": "file"
     },
     {
+      "path": "docs/DEV-BACKLOG.md",
+      "accessCount": 7,
+      "lastAccessed": 1773735976270,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/search.ts",
+      "accessCount": 7,
+      "lastAccessed": 1773739276569,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/reranker.ts",
+      "accessCount": 7,
+      "lastAccessed": 1773739297533,
+      "type": "file"
+    },
+    {
+      "path": "app/api/knowledge/route.ts",
+      "accessCount": 6,
+      "lastAccessed": 1773739297480,
+      "type": "file"
+    },
+    {
       "path": ".env.local",
       "accessCount": 5,
       "lastAccessed": 1773727294602,
       "type": "file"
     },
     {
-      "path": "lib/rag/reranker.ts",
-      "accessCount": 5,
-      "lastAccessed": 1773728597759,
-      "type": "file"
-    },
-    {
-      "path": "lib/rag/search.ts",
-      "accessCount": 5,
-      "lastAccessed": 1773728806966,
-      "type": "file"
-    },
-    {
       "path": ".claude/settings.json",
-      "accessCount": 3,
-      "lastAccessed": 1773713641424,
+      "accessCount": 4,
+      "lastAccessed": 1773737201910,
       "type": "file"
     },
     {
       "path": "app/api/evaluate/route.ts",
       "accessCount": 2,
       "lastAccessed": 1773700482142,
+      "type": "file"
+    },
+    {
+      "path": ".claude/settings.local.json",
+      "accessCount": 2,
+      "lastAccessed": 1773737954410,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773739276519,
+      "type": "file"
+    },
+    {
+      "path": "scripts/test-rag.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773739276620,
+      "type": "file"
+    },
+    {
+      "path": "scripts/knowledge-base.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773739576882,
       "type": "file"
     },
     {
@@ -229,12 +277,6 @@
       "path": "app/api/optimize/route.ts",
       "accessCount": 1,
       "lastAccessed": 1773674885793,
-      "type": "file"
-    },
-    {
-      "path": "app/api/knowledge/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773674885845,
       "type": "file"
     },
     {
@@ -310,10 +352,10 @@
       "type": "directory"
     },
     {
-      "path": "scripts/test-rag.ts",
+      "path": "lib/rag",
       "accessCount": 1,
-      "lastAccessed": 1773726812466,
-      "type": "file"
+      "lastAccessed": 1773730852252,
+      "type": "directory"
     }
   ],
   "userDirectives": []
