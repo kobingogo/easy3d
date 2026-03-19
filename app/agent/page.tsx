@@ -7,11 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { ModelViewer } from '@/components/3d/ModelViewer'
+import { ThoughtDisplay } from '@/components/agent/thought-display'
 import {
   Cpu, Zap, CheckCircle, XCircle, Loader2, ChevronDown, ChevronRight,
   Play, RefreshCw, StopCircle, Download, Box, ExternalLink,
-  AlertTriangle, ThumbsUp, ThumbsDown
+  AlertTriangle, ThumbsUp, ThumbsDown, Brain
 } from 'lucide-react'
+import type { Thought } from '@/lib/agent/types'
 
 interface Tool {
   name: string
@@ -73,7 +75,9 @@ export default function AgentPage() {
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus | null>(null)
   const [tools, setTools] = useState<Tool[]>([])
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set())
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const [thoughts, setThoughts] = useState<Thought[]>([])
+  const [stepThoughts, setStepThoughts] = useState<Map<string, Thought[]>>(new Map())
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   // 加载工具列表
   useEffect(() => {
@@ -87,39 +91,133 @@ export default function AgentPage() {
       .catch(console.error)
   }, [])
 
-  // 轮询工作流状态
-  const pollStatus = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`/api/agent?workflowId=${id}`)
-      const data = await res.json()
+  // SSE 连接管理
+  const connectSSE = useCallback((id: string) => {
+    // 关闭现有连接
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+    }
 
-      if (data.success) {
-        setWorkflowStatus(data)
+    const eventSource = new EventSource(`/api/agent/stream?workflowId=${id}`)
+    eventSourceRef.current = eventSource
 
-        // 完成或失败时停止轮询
-        if (data.status === 'completed' || data.status === 'failed') {
-          if (pollingRef.current) {
-            clearInterval(pollingRef.current)
-            pollingRef.current = null
-          }
+    // 监听所有命名事件
+    const eventTypes = ['thought', 'step_start', 'step_end', 'workflow_complete', 'workflow_failed']
+
+    eventTypes.forEach(eventType => {
+      eventSource.addEventListener(eventType, (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          handleSSEEvent(data)
+        } catch (e) {
+          console.error(`SSE parse error for ${eventType}:`, e)
         }
+      })
+    })
+
+    // 也监听默认 message 事件（兼容性）
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        handleSSEEvent(data)
+      } catch (e) {
+        console.error('SSE parse error:', e)
       }
-    } catch (error) {
-      console.error('Poll error:', error)
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error)
+      eventSource.close()
+      eventSourceRef.current = null
     }
   }, [])
 
-  // 启动轮询
+  // 处理 SSE 事件
+  const handleSSEEvent = useCallback((event: any) => {
+    switch (event.type) {
+      case 'thought':
+        const thought = event.data?.thought
+        if (thought) {
+          setThoughts(prev => [...prev, thought])
+          const stepId = event.data?.stepId
+          if (stepId) {
+            setStepThoughts(prev => {
+              const newMap = new Map(prev)
+              const existing = newMap.get(stepId) || []
+              newMap.set(stepId, [...existing, thought])
+              return newMap
+            })
+          }
+        }
+        break
+
+      case 'step_start':
+        // 步骤开始，可以更新状态
+        break
+
+      case 'step_end':
+        // 步骤结束，更新结果
+        if (workflowStatus) {
+          const stepResult: StepResult = {
+            stepId: event.data?.stepId,
+            status: event.data?.status === 'success' ? 'success' : 'failed',
+            data: event.data?.output,
+            error: event.data?.error ? {
+              code: 'EXECUTION_ERROR',
+              message: event.data.error,
+              recoverable: false
+            } : undefined
+          }
+          setWorkflowStatus(prev => {
+            if (!prev) return prev
+            const existingResults = prev.results || []
+            const resultIndex = existingResults.findIndex(r => r.stepId === stepResult.stepId)
+            const newResults = resultIndex >= 0
+              ? existingResults.map((r, i) => i === resultIndex ? stepResult : r)
+              : [...existingResults, stepResult]
+            return {
+              ...prev,
+              currentStep: prev.currentStep + 1,
+              results: newResults
+            }
+          })
+        }
+        break
+
+      case 'workflow_complete':
+        setWorkflowStatus(prev => prev ? {
+          ...prev,
+          status: 'completed',
+          completedAt: new Date().toISOString()
+        } : prev)
+        eventSourceRef.current?.close()
+        eventSourceRef.current = null
+        break
+
+      case 'workflow_failed':
+        setWorkflowStatus(prev => prev ? {
+          ...prev,
+          status: 'failed',
+          error: event.data?.trace?.error || 'Workflow failed'
+        } : prev)
+        eventSourceRef.current?.close()
+        eventSourceRef.current = null
+        break
+    }
+  }, [workflowStatus])
+
+  // 监听 workflowId 变化，建立 SSE 连接
   useEffect(() => {
     if (workflowId && workflowStatus?.status === 'running') {
-      pollingRef.current = setInterval(() => pollStatus(workflowId), 2000)
+      connectSSE(workflowId)
     }
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
       }
     }
-  }, [workflowId, workflowStatus?.status, pollStatus])
+  }, [workflowId, workflowStatus?.status, connectSSE])
 
   // 启动异步工作流
   const handleStart = async () => {
@@ -147,14 +245,12 @@ export default function AgentPage() {
         setWorkflowId(data.workflowId)
         setWorkflowStatus({
           id: data.workflowId,
-          status: 'pending',
+          status: 'running',
           currentStep: 0,
           totalSteps: data.plan.steps.length,
           startedAt: new Date().toISOString(),
           results: []
         })
-        // 立即查询一次状态
-        setTimeout(() => pollStatus(data.workflowId), 500)
       } else {
         console.error('Start error:', data.error)
       }
@@ -165,12 +261,14 @@ export default function AgentPage() {
 
   // 取消工作流
   const handleCancel = () => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
     }
     setWorkflowId(null)
     setWorkflowStatus(null)
+    setThoughts([])
+    setStepThoughts(new Map())
   }
 
   // 重新执行
@@ -399,6 +497,24 @@ export default function AgentPage() {
                       <span>Token: {workflowStatus.workflow.trace.totalTokens}</span>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 思维链展示 */}
+            {thoughts.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-purple-500" />
+                    思维链
+                  </CardTitle>
+                  <CardDescription>
+                    Agent 的推理过程实时展示
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ThoughtDisplay thoughts={thoughts} />
                 </CardContent>
               </Card>
             )}

@@ -1,0 +1,2082 @@
+{
+  "8f83f718-3031-4bac-9d07-c0f971c510b6": {
+    "id": "8f83f718-3031-4bac-9d07-c0f971c510b6",
+    "status": "failed",
+    "currentStep": 0,
+    "totalSteps": 4,
+    "startedAt": "2026-03-19T15:12:39.683Z",
+    "completedAt": "2026-03-19T15:13:02.475Z",
+    "results": {
+      "step_1": {
+        "stepId": "step_1",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "category": "bags",
+            "subcategory": "女包",
+            "style": [
+              "时尚",
+              "优雅",
+              "百搭",
+              "简约"
+            ],
+            "colors": [
+              "黑色",
+              "米色",
+              "棕色"
+            ],
+            "materials": [
+              "皮革",
+              "帆布",
+              "尼龙"
+            ],
+            "targetAudience": "20-40 岁注重时尚与实用性的女性",
+            "priceRange": "mid",
+            "keywords": [
+              "女包",
+              "women's handbag",
+              "时尚",
+              "fashion",
+              "3D 展示",
+              "3D display",
+              "皮革",
+              "leather",
+              "百搭",
+              "versatile",
+              "手提包",
+              "tote bag"
+            ],
+            "confidence": 0.7,
+            "suggestedStyle": "trendy",
+            "platform": null,
+            "displayContext": "适合电商详情页的立体化商品展示，突出材质细节与多视角交互体验"
+          },
+          "metadata": {
+            "duration": 10458,
+            "tokensUsed": 1039,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:12:50.145Z"
+      },
+      "step_2": {
+        "stepId": "step_2",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "prompt": "A stylish women's handbag with smooth leather texture, placed on a vibrant gradient background transitioning from purple to orange. Dynamic low-angle shot with colorful lighting highlighting the bag's contours and elegant design details.",
+            "style": "时尚、优雅、百搭、简约",
+            "lighting": "多彩的渐变灯光，突出产品轮廓",
+            "background": "充满活力的渐变背景，从紫色到橙色",
+            "camera": "动态低角度拍摄，突出包的立体感",
+            "keywords": [
+              "women's handbag",
+              "fashionable",
+              "elegant",
+              "gradient background",
+              "colorful lighting",
+              "dynamic angle",
+              "smooth leather texture"
+            ],
+            "knowledgeReferences": [
+              "prod-048",
+              "prod-048b",
+              "prod-051",
+              "prod-049",
+              "prod-048a",
+              "prod-006"
+            ],
+            "productType": "women's handbag",
+            "confidence": 0.9
+          },
+          "metadata": {
+            "duration": 10915,
+            "tokensUsed": 887,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:13:01.064Z"
+      },
+      "step_3": {
+        "stepId": "step_3",
+        "status": "failed",
+        "result": {
+          "success": false,
+          "error": {
+            "code": "GENERATION_FAILED",
+            "message": "Tripo API 余额不足，请充值后重试",
+            "recoverable": true
+          }
+        },
+        "completedAt": "2026-03-19T15:13:02.474Z"
+      }
+    },
+    "workflow": {
+      "id": "8f83f718-3031-4bac-9d07-c0f971c510b6",
+      "name": "Agent: 帮我生成一个女包3D展示",
+      "description": "使用标准3D生成流程：分析商品 → 优化提示词 → 生成模型 → 质量检查",
+      "status": "failed",
+      "steps": [
+        {
+          "id": "step_1",
+          "tool": "analyze_product",
+          "input": {
+            "type": "static",
+            "value": {
+              "description": "帮我生成一个女包3D展示"
+            }
+          },
+          "description": "分析商品特征"
+        },
+        {
+          "id": "step_2",
+          "tool": "optimize_prompt",
+          "input": {
+            "type": "static",
+            "value": {
+              "analysis": {
+                "type": "reference",
+                "stepId": "step_1",
+                "path": "."
+              },
+              "userDescription": "帮我生成一个女包3D展示"
+            }
+          },
+          "description": "优化生成提示词"
+        },
+        {
+          "id": "step_3",
+          "tool": "generate_3d",
+          "input": {
+            "type": "static",
+            "value": {
+              "prompt": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "."
+              }
+            }
+          },
+          "description": "生成3D模型"
+        },
+        {
+          "id": "step_4",
+          "tool": "quality_check",
+          "input": {
+            "type": "static",
+            "value": {
+              "modelUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "modelUrl"
+              },
+              "thumbnailUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "thumbnailUrl"
+              },
+              "expectedProductType": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "productType"
+              },
+              "originalDescription": "帮我生成一个女包3D展示"
+            }
+          },
+          "description": "质量检查与验证"
+        }
+      ],
+      "results": {},
+      "trace": {
+        "workflowId": "8f83f718-3031-4bac-9d07-c0f971c510b6",
+        "status": "failed",
+        "startTime": "2026-03-19T15:12:39.683Z",
+        "totalTokens": 1926,
+        "totalCost": 0,
+        "steps": [
+          {
+            "stepId": "step_1",
+            "toolName": "analyze_product",
+            "status": "success",
+            "input": {
+              "description": "帮我生成一个女包3D展示"
+            },
+            "startTime": "2026-03-19T15:12:39.686Z",
+            "thoughts": [
+              {
+                "id": "step_1-thought-1773933159686",
+                "type": "reasoning",
+                "content": "分析任务：使用 analyze_product 工具处理 分析商品特征",
+                "timestamp": 1773933159686
+              },
+              {
+                "id": "step_1-thought-1773933170145",
+                "type": "action",
+                "content": "执行 analyze_product 工具",
+                "timestamp": 1773933170145
+              },
+              {
+                "id": "step_1-thought-1773933170145",
+                "type": "observation",
+                "content": "工具执行成功：{\"category\":\"bags\",\"subcategory\":\"女包\",\"style\":[\"时尚\",\"优雅\",\"百搭\",\"简约\"],\"colors\":[\"黑色\",\"米色\",\"棕色\"],\"materials\":[\"皮革\",\"帆布\",\"尼龙\"],\"targetAudience\":\"20-40 岁注重时尚与实用性的女性\",\"priceRange\":\"mid\",\"keywords\":[\"女包\",\"wo",
+                "timestamp": 1773933170145
+              }
+            ],
+            "output": {
+              "category": "bags",
+              "subcategory": "女包",
+              "style": [
+                "时尚",
+                "优雅",
+                "百搭",
+                "简约"
+              ],
+              "colors": [
+                "黑色",
+                "米色",
+                "棕色"
+              ],
+              "materials": [
+                "皮革",
+                "帆布",
+                "尼龙"
+              ],
+              "targetAudience": "20-40 岁注重时尚与实用性的女性",
+              "priceRange": "mid",
+              "keywords": [
+                "女包",
+                "women's handbag",
+                "时尚",
+                "fashion",
+                "3D 展示",
+                "3D display",
+                "皮革",
+                "leather",
+                "百搭",
+                "versatile",
+                "手提包",
+                "tote bag"
+              ],
+              "confidence": 0.7,
+              "suggestedStyle": "trendy",
+              "platform": null,
+              "displayContext": "适合电商详情页的立体化商品展示，突出材质细节与多视角交互体验"
+            },
+            "endTime": "2026-03-19T15:12:50.145Z",
+            "duration": 10459,
+            "tokensUsed": 1039,
+            "cost": 0
+          },
+          {
+            "stepId": "step_2",
+            "toolName": "optimize_prompt",
+            "status": "success",
+            "input": {
+              "analysis": {
+                "category": "bags",
+                "subcategory": "女包",
+                "style": [
+                  "时尚",
+                  "优雅",
+                  "百搭",
+                  "简约"
+                ],
+                "colors": [
+                  "黑色",
+                  "米色",
+                  "棕色"
+                ],
+                "materials": [
+                  "皮革",
+                  "帆布",
+                  "尼龙"
+                ],
+                "targetAudience": "20-40 岁注重时尚与实用性的女性",
+                "priceRange": "mid",
+                "keywords": [
+                  "女包",
+                  "women's handbag",
+                  "时尚",
+                  "fashion",
+                  "3D 展示",
+                  "3D display",
+                  "皮革",
+                  "leather",
+                  "百搭",
+                  "versatile",
+                  "手提包",
+                  "tote bag"
+                ],
+                "confidence": 0.7,
+                "suggestedStyle": "trendy",
+                "platform": null,
+                "displayContext": "适合电商详情页的立体化商品展示，突出材质细节与多视角交互体验"
+              },
+              "userDescription": "帮我生成一个女包3D展示",
+              "description": "帮我生成一个女包3D展示"
+            },
+            "startTime": "2026-03-19T15:12:50.148Z",
+            "thoughts": [
+              {
+                "id": "step_2-thought-1773933170148",
+                "type": "reasoning",
+                "content": "分析任务：使用 optimize_prompt 工具处理 优化生成提示词",
+                "timestamp": 1773933170148
+              },
+              {
+                "id": "step_2-thought-1773933181064",
+                "type": "action",
+                "content": "执行 optimize_prompt 工具",
+                "timestamp": 1773933181064
+              },
+              {
+                "id": "step_2-thought-1773933181065",
+                "type": "observation",
+                "content": "工具执行成功：{\"prompt\":\"A stylish women's handbag with smooth leather texture, placed on a vibrant gradient background transitioning from purple to orange. Dynamic low-angle shot with colorful lighting highlightin",
+                "timestamp": 1773933181065
+              }
+            ],
+            "output": {
+              "prompt": "A stylish women's handbag with smooth leather texture, placed on a vibrant gradient background transitioning from purple to orange. Dynamic low-angle shot with colorful lighting highlighting the bag's contours and elegant design details.",
+              "style": "时尚、优雅、百搭、简约",
+              "lighting": "多彩的渐变灯光，突出产品轮廓",
+              "background": "充满活力的渐变背景，从紫色到橙色",
+              "camera": "动态低角度拍摄，突出包的立体感",
+              "keywords": [
+                "women's handbag",
+                "fashionable",
+                "elegant",
+                "gradient background",
+                "colorful lighting",
+                "dynamic angle",
+                "smooth leather texture"
+              ],
+              "knowledgeReferences": [
+                "prod-048",
+                "prod-048b",
+                "prod-051",
+                "prod-049",
+                "prod-048a",
+                "prod-006"
+              ],
+              "productType": "women's handbag",
+              "confidence": 0.9
+            },
+            "endTime": "2026-03-19T15:13:01.064Z",
+            "duration": 10916,
+            "tokensUsed": 887,
+            "cost": 0
+          },
+          {
+            "stepId": "step_3",
+            "toolName": "generate_3d",
+            "status": "failed",
+            "input": {
+              "prompt": {
+                "prompt": "A stylish women's handbag with smooth leather texture, placed on a vibrant gradient background transitioning from purple to orange. Dynamic low-angle shot with colorful lighting highlighting the bag's contours and elegant design details.",
+                "style": "时尚、优雅、百搭、简约",
+                "lighting": "多彩的渐变灯光，突出产品轮廓",
+                "background": "充满活力的渐变背景，从紫色到橙色",
+                "camera": "动态低角度拍摄，突出包的立体感",
+                "keywords": [
+                  "women's handbag",
+                  "fashionable",
+                  "elegant",
+                  "gradient background",
+                  "colorful lighting",
+                  "dynamic angle",
+                  "smooth leather texture"
+                ],
+                "knowledgeReferences": [
+                  "prod-048",
+                  "prod-048b",
+                  "prod-051",
+                  "prod-049",
+                  "prod-048a",
+                  "prod-006"
+                ],
+                "productType": "women's handbag",
+                "confidence": 0.9
+              },
+              "description": "帮我生成一个女包3D展示"
+            },
+            "startTime": "2026-03-19T15:13:01.066Z",
+            "thoughts": [
+              {
+                "id": "step_3-thought-1773933181066",
+                "type": "reasoning",
+                "content": "分析任务：使用 generate_3d 工具处理 生成3D模型",
+                "timestamp": 1773933181066
+              },
+              {
+                "id": "step_3-thought-1773933182474",
+                "type": "action",
+                "content": "执行 generate_3d 工具",
+                "timestamp": 1773933182474
+              },
+              {
+                "id": "step_3-thought-1773933182475",
+                "type": "observation",
+                "content": "工具执行失败：Tripo API 余额不足，请充值后重试",
+                "timestamp": 1773933182475
+              }
+            ],
+            "error": "Tripo API 余额不足，请充值后重试",
+            "endTime": "2026-03-19T15:13:02.474Z",
+            "duration": 1408
+          }
+        ],
+        "endTime": "2026-03-19T15:13:02.475Z",
+        "totalDuration": 22792
+      },
+      "createdAt": "2026-03-19T15:12:39.682Z",
+      "updatedAt": "2026-03-19T15:12:39.682Z",
+      "currentStep": 2
+    }
+  },
+  "c08ff4d3-d35f-400d-bf55-f8d83926df0f": {
+    "id": "c08ff4d3-d35f-400d-bf55-f8d83926df0f",
+    "status": "failed",
+    "currentStep": 0,
+    "totalSteps": 4,
+    "startedAt": "2026-03-19T15:16:40.368Z",
+    "completedAt": "2026-03-19T15:17:57.816Z",
+    "results": {
+      "step_1": {
+        "stepId": "step_1",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "category": "other",
+            "subcategory": "技术测试服务",
+            "style": [
+              "technical",
+              "minimal",
+              "functional",
+              "digital"
+            ],
+            "colors": [
+              "black",
+              "white",
+              "blue"
+            ],
+            "materials": [
+              "software",
+              "cloud",
+              "digital"
+            ],
+            "targetAudience": "开发者与技术人员",
+            "priceRange": "budget",
+            "keywords": [
+              "SSE 测试",
+              "SSE Test",
+              "Server-Sent Events",
+              "流式传输",
+              "Stream",
+              "技术调试",
+              "API 测试",
+              "开发工具"
+            ],
+            "confidence": 0.7,
+            "suggestedStyle": "tech",
+            "platform": null,
+            "displayContext": "技术调试与开发场景，非传统电商展示"
+          },
+          "metadata": {
+            "duration": 63660,
+            "tokensUsed": 4842,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:17:44.031Z"
+      },
+      "step_2": {
+        "stepId": "step_2",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "prompt": "A futuristic Server-Sent Events Test Server with metallic reflective casing, glowing blue LED indicators showing real-time data streams, minimalist technical design with exposed circuit patterns, floating holographic interface displaying SSE protocol metrics, dark gradient background with subtle grid lines",
+            "style": "futuristic dark background, blue LED accents, metallic reflective surface",
+            "lighting": "冷色调 LED 灯光突出金属质感，局部高光强调技术细节",
+            "background": "深空灰渐变背景搭配霓虹蓝色科技线条",
+            "camera": "45 度等轴测视角展现设备立体结构",
+            "keywords": [
+              "Server-Sent Events",
+              "real-time data",
+              "developer tool",
+              "metallic casing",
+              "LED indicators",
+              "protocol testing"
+            ],
+            "knowledgeReferences": [],
+            "productType": "test server",
+            "confidence": 0.9
+          },
+          "metadata": {
+            "duration": 12431,
+            "tokensUsed": 928,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:17:56.466Z"
+      },
+      "step_3": {
+        "stepId": "step_3",
+        "status": "failed",
+        "result": {
+          "success": false,
+          "error": {
+            "code": "GENERATION_FAILED",
+            "message": "Tripo API 余额不足，请充值后重试",
+            "recoverable": true
+          }
+        },
+        "completedAt": "2026-03-19T15:17:57.812Z"
+      }
+    },
+    "workflow": {
+      "id": "c08ff4d3-d35f-400d-bf55-f8d83926df0f",
+      "name": "Agent: 测试SSE流",
+      "description": "使用标准3D生成流程：分析商品 → 优化提示词 → 生成模型 → 质量检查",
+      "status": "failed",
+      "steps": [
+        {
+          "id": "step_1",
+          "tool": "analyze_product",
+          "input": {
+            "type": "static",
+            "value": {
+              "description": "测试SSE流"
+            }
+          },
+          "description": "分析商品特征"
+        },
+        {
+          "id": "step_2",
+          "tool": "optimize_prompt",
+          "input": {
+            "type": "static",
+            "value": {
+              "analysis": {
+                "type": "reference",
+                "stepId": "step_1",
+                "path": "."
+              },
+              "userDescription": "测试SSE流"
+            }
+          },
+          "description": "优化生成提示词"
+        },
+        {
+          "id": "step_3",
+          "tool": "generate_3d",
+          "input": {
+            "type": "static",
+            "value": {
+              "prompt": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "."
+              }
+            }
+          },
+          "description": "生成3D模型"
+        },
+        {
+          "id": "step_4",
+          "tool": "quality_check",
+          "input": {
+            "type": "static",
+            "value": {
+              "modelUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "modelUrl"
+              },
+              "thumbnailUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "thumbnailUrl"
+              },
+              "expectedProductType": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "productType"
+              },
+              "originalDescription": "测试SSE流"
+            }
+          },
+          "description": "质量检查与验证"
+        }
+      ],
+      "results": {},
+      "trace": {
+        "workflowId": "c08ff4d3-d35f-400d-bf55-f8d83926df0f",
+        "status": "failed",
+        "startTime": "2026-03-19T15:16:40.370Z",
+        "totalTokens": 5770,
+        "totalCost": 0,
+        "steps": [
+          {
+            "stepId": "step_1",
+            "toolName": "analyze_product",
+            "status": "success",
+            "input": {
+              "description": "测试SSE流"
+            },
+            "startTime": "2026-03-19T15:16:40.371Z",
+            "thoughts": [
+              {
+                "id": "step_1-thought-1773933400371",
+                "type": "reasoning",
+                "content": "分析任务：使用 analyze_product 工具处理 分析商品特征",
+                "timestamp": 1773933400371
+              },
+              {
+                "id": "step_1-thought-1773933464031",
+                "type": "action",
+                "content": "执行 analyze_product 工具",
+                "timestamp": 1773933464031
+              },
+              {
+                "id": "step_1-thought-1773933464034",
+                "type": "observation",
+                "content": "工具执行成功：{\"category\":\"other\",\"subcategory\":\"技术测试服务\",\"style\":[\"technical\",\"minimal\",\"functional\",\"digital\"],\"colors\":[\"black\",\"white\",\"blue\"],\"materials\":[\"software\",\"cloud\",\"digital\"],\"targetAudience\":\"开发者与技术人",
+                "timestamp": 1773933464034
+              }
+            ],
+            "output": {
+              "category": "other",
+              "subcategory": "技术测试服务",
+              "style": [
+                "technical",
+                "minimal",
+                "functional",
+                "digital"
+              ],
+              "colors": [
+                "black",
+                "white",
+                "blue"
+              ],
+              "materials": [
+                "software",
+                "cloud",
+                "digital"
+              ],
+              "targetAudience": "开发者与技术人员",
+              "priceRange": "budget",
+              "keywords": [
+                "SSE 测试",
+                "SSE Test",
+                "Server-Sent Events",
+                "流式传输",
+                "Stream",
+                "技术调试",
+                "API 测试",
+                "开发工具"
+              ],
+              "confidence": 0.7,
+              "suggestedStyle": "tech",
+              "platform": null,
+              "displayContext": "技术调试与开发场景，非传统电商展示"
+            },
+            "endTime": "2026-03-19T15:17:44.031Z",
+            "duration": 63660,
+            "tokensUsed": 4842,
+            "cost": 0
+          },
+          {
+            "stepId": "step_2",
+            "toolName": "optimize_prompt",
+            "status": "success",
+            "input": {
+              "analysis": {
+                "category": "other",
+                "subcategory": "技术测试服务",
+                "style": [
+                  "technical",
+                  "minimal",
+                  "functional",
+                  "digital"
+                ],
+                "colors": [
+                  "black",
+                  "white",
+                  "blue"
+                ],
+                "materials": [
+                  "software",
+                  "cloud",
+                  "digital"
+                ],
+                "targetAudience": "开发者与技术人员",
+                "priceRange": "budget",
+                "keywords": [
+                  "SSE 测试",
+                  "SSE Test",
+                  "Server-Sent Events",
+                  "流式传输",
+                  "Stream",
+                  "技术调试",
+                  "API 测试",
+                  "开发工具"
+                ],
+                "confidence": 0.7,
+                "suggestedStyle": "tech",
+                "platform": null,
+                "displayContext": "技术调试与开发场景，非传统电商展示"
+              },
+              "userDescription": "测试SSE流",
+              "description": "测试SSE流"
+            },
+            "startTime": "2026-03-19T15:17:44.035Z",
+            "thoughts": [
+              {
+                "id": "step_2-thought-1773933464035",
+                "type": "reasoning",
+                "content": "分析任务：使用 optimize_prompt 工具处理 优化生成提示词",
+                "timestamp": 1773933464035
+              },
+              {
+                "id": "step_2-thought-1773933476466",
+                "type": "action",
+                "content": "执行 optimize_prompt 工具",
+                "timestamp": 1773933476466
+              },
+              {
+                "id": "step_2-thought-1773933476468",
+                "type": "observation",
+                "content": "工具执行成功：{\"prompt\":\"A futuristic Server-Sent Events Test Server with metallic reflective casing, glowing blue LED indicators showing real-time data streams, minimalist technical design with exposed circuit pat",
+                "timestamp": 1773933476468
+              }
+            ],
+            "output": {
+              "prompt": "A futuristic Server-Sent Events Test Server with metallic reflective casing, glowing blue LED indicators showing real-time data streams, minimalist technical design with exposed circuit patterns, floating holographic interface displaying SSE protocol metrics, dark gradient background with subtle grid lines",
+              "style": "futuristic dark background, blue LED accents, metallic reflective surface",
+              "lighting": "冷色调 LED 灯光突出金属质感，局部高光强调技术细节",
+              "background": "深空灰渐变背景搭配霓虹蓝色科技线条",
+              "camera": "45 度等轴测视角展现设备立体结构",
+              "keywords": [
+                "Server-Sent Events",
+                "real-time data",
+                "developer tool",
+                "metallic casing",
+                "LED indicators",
+                "protocol testing"
+              ],
+              "knowledgeReferences": [],
+              "productType": "test server",
+              "confidence": 0.9
+            },
+            "endTime": "2026-03-19T15:17:56.466Z",
+            "duration": 12431,
+            "tokensUsed": 928,
+            "cost": 0
+          },
+          {
+            "stepId": "step_3",
+            "toolName": "generate_3d",
+            "status": "failed",
+            "input": {
+              "prompt": {
+                "prompt": "A futuristic Server-Sent Events Test Server with metallic reflective casing, glowing blue LED indicators showing real-time data streams, minimalist technical design with exposed circuit patterns, floating holographic interface displaying SSE protocol metrics, dark gradient background with subtle grid lines",
+                "style": "futuristic dark background, blue LED accents, metallic reflective surface",
+                "lighting": "冷色调 LED 灯光突出金属质感，局部高光强调技术细节",
+                "background": "深空灰渐变背景搭配霓虹蓝色科技线条",
+                "camera": "45 度等轴测视角展现设备立体结构",
+                "keywords": [
+                  "Server-Sent Events",
+                  "real-time data",
+                  "developer tool",
+                  "metallic casing",
+                  "LED indicators",
+                  "protocol testing"
+                ],
+                "knowledgeReferences": [],
+                "productType": "test server",
+                "confidence": 0.9
+              },
+              "description": "测试SSE流"
+            },
+            "startTime": "2026-03-19T15:17:56.470Z",
+            "thoughts": [
+              {
+                "id": "step_3-thought-1773933476470",
+                "type": "reasoning",
+                "content": "分析任务：使用 generate_3d 工具处理 生成3D模型",
+                "timestamp": 1773933476470
+              },
+              {
+                "id": "step_3-thought-1773933477812",
+                "type": "action",
+                "content": "执行 generate_3d 工具",
+                "timestamp": 1773933477812
+              },
+              {
+                "id": "step_3-thought-1773933477814",
+                "type": "observation",
+                "content": "工具执行失败：Tripo API 余额不足，请充值后重试",
+                "timestamp": 1773933477814
+              }
+            ],
+            "error": "Tripo API 余额不足，请充值后重试",
+            "endTime": "2026-03-19T15:17:57.812Z",
+            "duration": 1342
+          }
+        ],
+        "endTime": "2026-03-19T15:17:57.815Z",
+        "totalDuration": 77445
+      },
+      "createdAt": "2026-03-19T15:16:40.368Z",
+      "updatedAt": "2026-03-19T15:16:40.368Z",
+      "currentStep": 2
+    }
+  },
+  "c2a73936-3a6d-462e-a4aa-c3b8280e2ad7": {
+    "id": "c2a73936-3a6d-462e-a4aa-c3b8280e2ad7",
+    "status": "failed",
+    "currentStep": 0,
+    "totalSteps": 4,
+    "startedAt": "2026-03-19T15:19:58.724Z",
+    "completedAt": "2026-03-19T15:20:23.119Z",
+    "results": {
+      "step_1": {
+        "stepId": "step_1",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "category": "bags",
+            "subcategory": "女包",
+            "style": [
+              "时尚",
+              "轻奢",
+              "潮流",
+              "简约"
+            ],
+            "colors": [
+              "棕色",
+              "黑色",
+              "米色"
+            ],
+            "materials": [
+              "皮革",
+              "帆布",
+              "金属"
+            ],
+            "targetAudience": "追求时尚与奢侈品品质的年轻女性",
+            "priceRange": "luxury",
+            "keywords": [
+              "女包",
+              "LV",
+              "手提包",
+              "Handbag",
+              "奢侈品",
+              "3D 展示",
+              "小红书",
+              "时尚"
+            ],
+            "confidence": 0.7,
+            "suggestedStyle": "luxury",
+            "platform": "xiaohongshu",
+            "displayContext": "适合小红书的种草风格，强调视觉吸引力与生活方式展示"
+          },
+          "metadata": {
+            "duration": 8141,
+            "tokensUsed": 862,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:20:06.871Z"
+      },
+      "step_2": {
+        "stepId": "step_2",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "prompt": "A luxury women's handbag with taupe brown monogram canvas, gold-tone hardware, and structured silhouette. Crafted from premium leather with minimalist design details. Rendered in soft natural daylight on organic textured wooden surface, lifestyle photography style with cozy atmosphere, Instagram-worthy aesthetic composition",
+            "style": "轻奢时尚生活风",
+            "lighting": "柔和自然光，模拟午后阳光，营造温暖氛围",
+            "background": "有机纹理背景，搭配木质表面，自然元素点缀",
+            "camera": "45度角俯拍，突出包身结构和纹理",
+            "keywords": [
+              "monogram canvas",
+              "gold-tone hardware",
+              "structured silhouette",
+              "taupe brown",
+              "luxury leather",
+              "minimalist design",
+              "lifestyle photography"
+            ],
+            "knowledgeReferences": [
+              "prod-048",
+              "light-038",
+              "prod-051",
+              "prod-048a",
+              "prod-048b",
+              "prod-049"
+            ],
+            "productType": "women's handbag",
+            "confidence": 0.9
+          },
+          "metadata": {
+            "duration": 13800,
+            "tokensUsed": 1010,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:20:20.682Z"
+      },
+      "step_3": {
+        "stepId": "step_3",
+        "status": "failed",
+        "result": {
+          "success": false,
+          "error": {
+            "code": "GENERATION_FAILED",
+            "message": "Tripo API 余额不足，请充值后重试",
+            "recoverable": true
+          }
+        },
+        "completedAt": "2026-03-19T15:20:23.101Z"
+      }
+    },
+    "workflow": {
+      "id": "c2a73936-3a6d-462e-a4aa-c3b8280e2ad7",
+      "name": "Agent: 帮我生成一个适合小红书的LV女包 3D 展示",
+      "description": "使用标准3D生成流程：分析商品 → 优化提示词 → 生成模型 → 质量检查",
+      "status": "failed",
+      "steps": [
+        {
+          "id": "step_1",
+          "tool": "analyze_product",
+          "input": {
+            "type": "static",
+            "value": {
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            }
+          },
+          "description": "分析商品特征"
+        },
+        {
+          "id": "step_2",
+          "tool": "optimize_prompt",
+          "input": {
+            "type": "static",
+            "value": {
+              "analysis": {
+                "type": "reference",
+                "stepId": "step_1",
+                "path": "."
+              },
+              "userDescription": "帮我生成一个适合小红书的LV女包 3D 展示"
+            }
+          },
+          "description": "优化生成提示词"
+        },
+        {
+          "id": "step_3",
+          "tool": "generate_3d",
+          "input": {
+            "type": "static",
+            "value": {
+              "prompt": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "."
+              }
+            }
+          },
+          "description": "生成3D模型"
+        },
+        {
+          "id": "step_4",
+          "tool": "quality_check",
+          "input": {
+            "type": "static",
+            "value": {
+              "modelUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "modelUrl"
+              },
+              "thumbnailUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "thumbnailUrl"
+              },
+              "expectedProductType": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "productType"
+              },
+              "originalDescription": "帮我生成一个适合小红书的LV女包 3D 展示"
+            }
+          },
+          "description": "质量检查与验证"
+        }
+      ],
+      "results": {},
+      "trace": {
+        "workflowId": "c2a73936-3a6d-462e-a4aa-c3b8280e2ad7",
+        "status": "failed",
+        "startTime": "2026-03-19T15:19:58.727Z",
+        "totalTokens": 1872,
+        "totalCost": 0,
+        "steps": [
+          {
+            "stepId": "step_1",
+            "toolName": "analyze_product",
+            "status": "success",
+            "input": {
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            },
+            "startTime": "2026-03-19T15:19:58.730Z",
+            "thoughts": [
+              {
+                "id": "step_1-thought-1773933598730",
+                "type": "reasoning",
+                "content": "分析任务：使用 analyze_product 工具处理 分析商品特征",
+                "timestamp": 1773933598730
+              },
+              {
+                "id": "step_1-thought-1773933606871",
+                "type": "action",
+                "content": "执行 analyze_product 工具",
+                "timestamp": 1773933606871
+              },
+              {
+                "id": "step_1-thought-1773933606872",
+                "type": "observation",
+                "content": "工具执行成功：{\"category\":\"bags\",\"subcategory\":\"女包\",\"style\":[\"时尚\",\"轻奢\",\"潮流\",\"简约\"],\"colors\":[\"棕色\",\"黑色\",\"米色\"],\"materials\":[\"皮革\",\"帆布\",\"金属\"],\"targetAudience\":\"追求时尚与奢侈品品质的年轻女性\",\"priceRange\":\"luxury\",\"keywords\":[\"女包\",\"LV",
+                "timestamp": 1773933606872
+              }
+            ],
+            "output": {
+              "category": "bags",
+              "subcategory": "女包",
+              "style": [
+                "时尚",
+                "轻奢",
+                "潮流",
+                "简约"
+              ],
+              "colors": [
+                "棕色",
+                "黑色",
+                "米色"
+              ],
+              "materials": [
+                "皮革",
+                "帆布",
+                "金属"
+              ],
+              "targetAudience": "追求时尚与奢侈品品质的年轻女性",
+              "priceRange": "luxury",
+              "keywords": [
+                "女包",
+                "LV",
+                "手提包",
+                "Handbag",
+                "奢侈品",
+                "3D 展示",
+                "小红书",
+                "时尚"
+              ],
+              "confidence": 0.7,
+              "suggestedStyle": "luxury",
+              "platform": "xiaohongshu",
+              "displayContext": "适合小红书的种草风格，强调视觉吸引力与生活方式展示"
+            },
+            "endTime": "2026-03-19T15:20:06.871Z",
+            "duration": 8141,
+            "tokensUsed": 862,
+            "cost": 0
+          },
+          {
+            "stepId": "step_2",
+            "toolName": "optimize_prompt",
+            "status": "success",
+            "input": {
+              "analysis": {
+                "category": "bags",
+                "subcategory": "女包",
+                "style": [
+                  "时尚",
+                  "轻奢",
+                  "潮流",
+                  "简约"
+                ],
+                "colors": [
+                  "棕色",
+                  "黑色",
+                  "米色"
+                ],
+                "materials": [
+                  "皮革",
+                  "帆布",
+                  "金属"
+                ],
+                "targetAudience": "追求时尚与奢侈品品质的年轻女性",
+                "priceRange": "luxury",
+                "keywords": [
+                  "女包",
+                  "LV",
+                  "手提包",
+                  "Handbag",
+                  "奢侈品",
+                  "3D 展示",
+                  "小红书",
+                  "时尚"
+                ],
+                "confidence": 0.7,
+                "suggestedStyle": "luxury",
+                "platform": "xiaohongshu",
+                "displayContext": "适合小红书的种草风格，强调视觉吸引力与生活方式展示"
+              },
+              "userDescription": "帮我生成一个适合小红书的LV女包 3D 展示",
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            },
+            "startTime": "2026-03-19T15:20:06.881Z",
+            "thoughts": [
+              {
+                "id": "step_2-thought-1773933606881",
+                "type": "reasoning",
+                "content": "分析任务：使用 optimize_prompt 工具处理 优化生成提示词",
+                "timestamp": 1773933606881
+              },
+              {
+                "id": "step_2-thought-1773933620682",
+                "type": "action",
+                "content": "执行 optimize_prompt 工具",
+                "timestamp": 1773933620682
+              },
+              {
+                "id": "step_2-thought-1773933620683",
+                "type": "observation",
+                "content": "工具执行成功：{\"prompt\":\"A luxury women's handbag with taupe brown monogram canvas, gold-tone hardware, and structured silhouette. Crafted from premium leather with minimalist design details. Rendered in soft natur",
+                "timestamp": 1773933620683
+              }
+            ],
+            "output": {
+              "prompt": "A luxury women's handbag with taupe brown monogram canvas, gold-tone hardware, and structured silhouette. Crafted from premium leather with minimalist design details. Rendered in soft natural daylight on organic textured wooden surface, lifestyle photography style with cozy atmosphere, Instagram-worthy aesthetic composition",
+              "style": "轻奢时尚生活风",
+              "lighting": "柔和自然光，模拟午后阳光，营造温暖氛围",
+              "background": "有机纹理背景，搭配木质表面，自然元素点缀",
+              "camera": "45度角俯拍，突出包身结构和纹理",
+              "keywords": [
+                "monogram canvas",
+                "gold-tone hardware",
+                "structured silhouette",
+                "taupe brown",
+                "luxury leather",
+                "minimalist design",
+                "lifestyle photography"
+              ],
+              "knowledgeReferences": [
+                "prod-048",
+                "light-038",
+                "prod-051",
+                "prod-048a",
+                "prod-048b",
+                "prod-049"
+              ],
+              "productType": "women's handbag",
+              "confidence": 0.9
+            },
+            "endTime": "2026-03-19T15:20:20.682Z",
+            "duration": 13801,
+            "tokensUsed": 1010,
+            "cost": 0
+          },
+          {
+            "stepId": "step_3",
+            "toolName": "generate_3d",
+            "status": "failed",
+            "input": {
+              "prompt": {
+                "prompt": "A luxury women's handbag with taupe brown monogram canvas, gold-tone hardware, and structured silhouette. Crafted from premium leather with minimalist design details. Rendered in soft natural daylight on organic textured wooden surface, lifestyle photography style with cozy atmosphere, Instagram-worthy aesthetic composition",
+                "style": "轻奢时尚生活风",
+                "lighting": "柔和自然光，模拟午后阳光，营造温暖氛围",
+                "background": "有机纹理背景，搭配木质表面，自然元素点缀",
+                "camera": "45度角俯拍，突出包身结构和纹理",
+                "keywords": [
+                  "monogram canvas",
+                  "gold-tone hardware",
+                  "structured silhouette",
+                  "taupe brown",
+                  "luxury leather",
+                  "minimalist design",
+                  "lifestyle photography"
+                ],
+                "knowledgeReferences": [
+                  "prod-048",
+                  "light-038",
+                  "prod-051",
+                  "prod-048a",
+                  "prod-048b",
+                  "prod-049"
+                ],
+                "productType": "women's handbag",
+                "confidence": 0.9
+              },
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            },
+            "startTime": "2026-03-19T15:20:20.684Z",
+            "thoughts": [
+              {
+                "id": "step_3-thought-1773933620684",
+                "type": "reasoning",
+                "content": "分析任务：使用 generate_3d 工具处理 生成3D模型",
+                "timestamp": 1773933620684
+              },
+              {
+                "id": "step_3-thought-1773933623101",
+                "type": "action",
+                "content": "执行 generate_3d 工具",
+                "timestamp": 1773933623101
+              },
+              {
+                "id": "step_3-thought-1773933623102",
+                "type": "observation",
+                "content": "工具执行失败：Tripo API 余额不足，请充值后重试",
+                "timestamp": 1773933623102
+              }
+            ],
+            "error": "Tripo API 余额不足，请充值后重试",
+            "endTime": "2026-03-19T15:20:23.101Z",
+            "duration": 2417
+          }
+        ],
+        "endTime": "2026-03-19T15:20:23.113Z",
+        "totalDuration": 24386
+      },
+      "createdAt": "2026-03-19T15:19:58.724Z",
+      "updatedAt": "2026-03-19T15:19:58.724Z",
+      "currentStep": 2
+    }
+  },
+  "c3d56dad-bee2-44e9-aae2-872c4061e3c6": {
+    "id": "c3d56dad-bee2-44e9-aae2-872c4061e3c6",
+    "status": "failed",
+    "currentStep": 0,
+    "totalSteps": 4,
+    "startedAt": "2026-03-19T15:23:19.183Z",
+    "completedAt": "2026-03-19T15:24:16.996Z",
+    "results": {
+      "step_1": {
+        "stepId": "step_1",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "category": "electronics",
+            "subcategory": "网络测试工具",
+            "style": [
+              "tech",
+              "minimal",
+              "professional"
+            ],
+            "colors": [
+              "黑色",
+              "银色"
+            ],
+            "materials": [
+              "金属",
+              "塑料"
+            ],
+            "targetAudience": "开发者/技术测试人员",
+            "priceRange": "mid",
+            "keywords": [
+              "实时数据流测试",
+              "SSE 流测试",
+              "Server-Sent Events",
+              "网络调试工具",
+              "real-time streaming test",
+              "开发测试设备",
+              "API 测试工具",
+              "技术验证平台"
+            ],
+            "confidence": 0.7,
+            "suggestedStyle": "tech",
+            "platform": null,
+            "displayContext": "适合技术产品电商详情页及开发者社区的专业功能展示"
+          },
+          "metadata": {
+            "duration": 19835,
+            "tokensUsed": 1337,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:23:39.025Z"
+      },
+      "step_2": {
+        "stepId": "step_2",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "prompt": "A professional network testing device for SSE stream testing, sleek metallic casing with reflective surface, blue LED accents indicating data flow, digital screen displaying real-time data streams, Ethernet ports, futuristic dark background, tech minimal style, professional lighting, octane render, 8k resolution",
+            "style": "tech, minimal, professional, futuristic",
+            "lighting": "专业工作室柔光，蓝色 LED 氛围灯，金属表面高光反射",
+            "background": "未来感深色背景，带有微弱科技感网格",
+            "camera": "45 度角产品特写，略微俯视，聚焦设备正面与接口",
+            "keywords": [
+              "network testing device",
+              "SSE",
+              "electronics",
+              "metallic",
+              "blue LED",
+              "data stream",
+              "tech gadget"
+            ],
+            "knowledgeReferences": [],
+            "productType": "network testing device",
+            "confidence": 0.9
+          },
+          "metadata": {
+            "duration": 36627,
+            "tokensUsed": 2925,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:24:15.661Z"
+      },
+      "step_3": {
+        "stepId": "step_3",
+        "status": "failed",
+        "result": {
+          "success": false,
+          "error": {
+            "code": "GENERATION_FAILED",
+            "message": "Tripo API 余额不足，请充值后重试",
+            "recoverable": true
+          }
+        },
+        "completedAt": "2026-03-19T15:24:16.938Z"
+      }
+    },
+    "workflow": {
+      "id": "c3d56dad-bee2-44e9-aae2-872c4061e3c6",
+      "name": "Agent: 测试实时SSE流",
+      "description": "使用标准3D生成流程：分析商品 → 优化提示词 → 生成模型 → 质量检查",
+      "status": "failed",
+      "steps": [
+        {
+          "id": "step_1",
+          "tool": "analyze_product",
+          "input": {
+            "type": "static",
+            "value": {
+              "description": "测试实时SSE流"
+            }
+          },
+          "description": "分析商品特征"
+        },
+        {
+          "id": "step_2",
+          "tool": "optimize_prompt",
+          "input": {
+            "type": "static",
+            "value": {
+              "analysis": {
+                "type": "reference",
+                "stepId": "step_1",
+                "path": "."
+              },
+              "userDescription": "测试实时SSE流"
+            }
+          },
+          "description": "优化生成提示词"
+        },
+        {
+          "id": "step_3",
+          "tool": "generate_3d",
+          "input": {
+            "type": "static",
+            "value": {
+              "prompt": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "."
+              }
+            }
+          },
+          "description": "生成3D模型"
+        },
+        {
+          "id": "step_4",
+          "tool": "quality_check",
+          "input": {
+            "type": "static",
+            "value": {
+              "modelUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "modelUrl"
+              },
+              "thumbnailUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "thumbnailUrl"
+              },
+              "expectedProductType": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "productType"
+              },
+              "originalDescription": "测试实时SSE流"
+            }
+          },
+          "description": "质量检查与验证"
+        }
+      ],
+      "results": {},
+      "trace": {
+        "workflowId": "c3d56dad-bee2-44e9-aae2-872c4061e3c6",
+        "status": "failed",
+        "startTime": "2026-03-19T15:23:19.186Z",
+        "totalTokens": 4262,
+        "totalCost": 0,
+        "steps": [
+          {
+            "stepId": "step_1",
+            "toolName": "analyze_product",
+            "status": "success",
+            "input": {
+              "description": "测试实时SSE流"
+            },
+            "startTime": "2026-03-19T15:23:19.188Z",
+            "thoughts": [
+              {
+                "id": "step_1-thought-1773933799188",
+                "type": "reasoning",
+                "content": "分析任务：使用 analyze_product 工具处理 分析商品特征",
+                "timestamp": 1773933799188
+              },
+              {
+                "id": "step_1-thought-1773933819025",
+                "type": "action",
+                "content": "执行 analyze_product 工具",
+                "timestamp": 1773933819025
+              },
+              {
+                "id": "step_1-thought-1773933819026",
+                "type": "observation",
+                "content": "工具执行成功：{\"category\":\"electronics\",\"subcategory\":\"网络测试工具\",\"style\":[\"tech\",\"minimal\",\"professional\"],\"colors\":[\"黑色\",\"银色\"],\"materials\":[\"金属\",\"塑料\"],\"targetAudience\":\"开发者/技术测试人员\",\"priceRange\":\"mid\",\"keywords\":[\"实时",
+                "timestamp": 1773933819026
+              }
+            ],
+            "output": {
+              "category": "electronics",
+              "subcategory": "网络测试工具",
+              "style": [
+                "tech",
+                "minimal",
+                "professional"
+              ],
+              "colors": [
+                "黑色",
+                "银色"
+              ],
+              "materials": [
+                "金属",
+                "塑料"
+              ],
+              "targetAudience": "开发者/技术测试人员",
+              "priceRange": "mid",
+              "keywords": [
+                "实时数据流测试",
+                "SSE 流测试",
+                "Server-Sent Events",
+                "网络调试工具",
+                "real-time streaming test",
+                "开发测试设备",
+                "API 测试工具",
+                "技术验证平台"
+              ],
+              "confidence": 0.7,
+              "suggestedStyle": "tech",
+              "platform": null,
+              "displayContext": "适合技术产品电商详情页及开发者社区的专业功能展示"
+            },
+            "endTime": "2026-03-19T15:23:39.025Z",
+            "duration": 19837,
+            "tokensUsed": 1337,
+            "cost": 0
+          },
+          {
+            "stepId": "step_2",
+            "toolName": "optimize_prompt",
+            "status": "success",
+            "input": {
+              "analysis": {
+                "category": "electronics",
+                "subcategory": "网络测试工具",
+                "style": [
+                  "tech",
+                  "minimal",
+                  "professional"
+                ],
+                "colors": [
+                  "黑色",
+                  "银色"
+                ],
+                "materials": [
+                  "金属",
+                  "塑料"
+                ],
+                "targetAudience": "开发者/技术测试人员",
+                "priceRange": "mid",
+                "keywords": [
+                  "实时数据流测试",
+                  "SSE 流测试",
+                  "Server-Sent Events",
+                  "网络调试工具",
+                  "real-time streaming test",
+                  "开发测试设备",
+                  "API 测试工具",
+                  "技术验证平台"
+                ],
+                "confidence": 0.7,
+                "suggestedStyle": "tech",
+                "platform": null,
+                "displayContext": "适合技术产品电商详情页及开发者社区的专业功能展示"
+              },
+              "userDescription": "测试实时SSE流",
+              "description": "测试实时SSE流"
+            },
+            "startTime": "2026-03-19T15:23:39.033Z",
+            "thoughts": [
+              {
+                "id": "step_2-thought-1773933819033",
+                "type": "reasoning",
+                "content": "分析任务：使用 optimize_prompt 工具处理 优化生成提示词",
+                "timestamp": 1773933819033
+              },
+              {
+                "id": "step_2-thought-1773933855661",
+                "type": "action",
+                "content": "执行 optimize_prompt 工具",
+                "timestamp": 1773933855661
+              },
+              {
+                "id": "step_2-thought-1773933855665",
+                "type": "observation",
+                "content": "工具执行成功：{\"prompt\":\"A professional network testing device for SSE stream testing, sleek metallic casing with reflective surface, blue LED accents indicating data flow, digital screen displaying real-time data ",
+                "timestamp": 1773933855665
+              }
+            ],
+            "output": {
+              "prompt": "A professional network testing device for SSE stream testing, sleek metallic casing with reflective surface, blue LED accents indicating data flow, digital screen displaying real-time data streams, Ethernet ports, futuristic dark background, tech minimal style, professional lighting, octane render, 8k resolution",
+              "style": "tech, minimal, professional, futuristic",
+              "lighting": "专业工作室柔光，蓝色 LED 氛围灯，金属表面高光反射",
+              "background": "未来感深色背景，带有微弱科技感网格",
+              "camera": "45 度角产品特写，略微俯视，聚焦设备正面与接口",
+              "keywords": [
+                "network testing device",
+                "SSE",
+                "electronics",
+                "metallic",
+                "blue LED",
+                "data stream",
+                "tech gadget"
+              ],
+              "knowledgeReferences": [],
+              "productType": "network testing device",
+              "confidence": 0.9
+            },
+            "endTime": "2026-03-19T15:24:15.661Z",
+            "duration": 36628,
+            "tokensUsed": 2925,
+            "cost": 0
+          },
+          {
+            "stepId": "step_3",
+            "toolName": "generate_3d",
+            "status": "failed",
+            "input": {
+              "prompt": {
+                "prompt": "A professional network testing device for SSE stream testing, sleek metallic casing with reflective surface, blue LED accents indicating data flow, digital screen displaying real-time data streams, Ethernet ports, futuristic dark background, tech minimal style, professional lighting, octane render, 8k resolution",
+                "style": "tech, minimal, professional, futuristic",
+                "lighting": "专业工作室柔光，蓝色 LED 氛围灯，金属表面高光反射",
+                "background": "未来感深色背景，带有微弱科技感网格",
+                "camera": "45 度角产品特写，略微俯视，聚焦设备正面与接口",
+                "keywords": [
+                  "network testing device",
+                  "SSE",
+                  "electronics",
+                  "metallic",
+                  "blue LED",
+                  "data stream",
+                  "tech gadget"
+                ],
+                "knowledgeReferences": [],
+                "productType": "network testing device",
+                "confidence": 0.9
+              },
+              "description": "测试实时SSE流"
+            },
+            "startTime": "2026-03-19T15:24:15.667Z",
+            "thoughts": [
+              {
+                "id": "step_3-thought-1773933855667",
+                "type": "reasoning",
+                "content": "分析任务：使用 generate_3d 工具处理 生成3D模型",
+                "timestamp": 1773933855667
+              },
+              {
+                "id": "step_3-thought-1773933856939",
+                "type": "action",
+                "content": "执行 generate_3d 工具",
+                "timestamp": 1773933856939
+              },
+              {
+                "id": "step_3-thought-1773933856949",
+                "type": "observation",
+                "content": "工具执行失败：Tripo API 余额不足，请充值后重试",
+                "timestamp": 1773933856949
+              }
+            ],
+            "error": "Tripo API 余额不足，请充值后重试",
+            "endTime": "2026-03-19T15:24:16.938Z",
+            "duration": 1271
+          }
+        ],
+        "endTime": "2026-03-19T15:24:16.984Z",
+        "totalDuration": 57798
+      },
+      "createdAt": "2026-03-19T15:23:19.183Z",
+      "updatedAt": "2026-03-19T15:23:19.183Z",
+      "currentStep": 2
+    }
+  },
+  "ccc29f39-5e30-4f60-b7da-cf93c5258412": {
+    "id": "ccc29f39-5e30-4f60-b7da-cf93c5258412",
+    "status": "failed",
+    "currentStep": 0,
+    "totalSteps": 4,
+    "startedAt": "2026-03-19T15:25:03.827Z",
+    "completedAt": "2026-03-19T15:26:33.560Z",
+    "results": {
+      "step_1": {
+        "stepId": "step_1",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "category": "bags",
+            "subcategory": "女包",
+            "style": [
+              "luxury",
+              "fashion",
+              "classic",
+              "chic"
+            ],
+            "colors": [
+              "brown",
+              "beige",
+              "gold"
+            ],
+            "materials": [
+              "leather",
+              "coated canvas",
+              "metal hardware"
+            ],
+            "targetAudience": "时尚女性，奢侈品爱好者",
+            "priceRange": "luxury",
+            "keywords": [
+              "LV",
+              "路易威登",
+              "女包",
+              "Women's Bag",
+              "手袋",
+              "Handbag",
+              "奢侈品",
+              "Luxury"
+            ],
+            "confidence": 0.7,
+            "suggestedStyle": "luxury",
+            "platform": "xiaohongshu",
+            "displayContext": "适合小红书的种草风格，强调高级质感与社交分享属性"
+          },
+          "metadata": {
+            "duration": 38930,
+            "tokensUsed": 3163,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:25:42.764Z"
+      },
+      "step_2": {
+        "stepId": "step_2",
+        "status": "success",
+        "result": {
+          "success": true,
+          "data": {
+            "prompt": "A high-quality 3D model of a women's luxury handbag, classic designer style, premium leather texture, structured shape, placed on a warm wooden surface, soft natural daylight, cozy lifestyle atmosphere, Instagram-worthy aesthetic, high quality texture, fashion accessory",
+            "style": "luxury, fashion, classic, chic, Xiaohongshu lifestyle",
+            "lighting": "柔和自然日光，侧光突出质感",
+            "background": "有机生活化背景，木质表面，温馨室内",
+            "camera": "略微俯视 45 度角，生活化场景视角",
+            "keywords": [
+              "women's handbag",
+              "luxury leather",
+              "wooden surface",
+              "natural lighting",
+              "lifestyle",
+              "fashion"
+            ],
+            "knowledgeReferences": [
+              "prod-048",
+              "light-038",
+              "prod-048b",
+              "prod-051",
+              "prod-048a",
+              "prod-049"
+            ],
+            "productType": "women's luxury handbag",
+            "confidence": 0.95
+          },
+          "metadata": {
+            "duration": 49399,
+            "tokensUsed": 3722,
+            "modelUsed": "qwen3.5-plus"
+          }
+        },
+        "completedAt": "2026-03-19T15:26:32.168Z"
+      },
+      "step_3": {
+        "stepId": "step_3",
+        "status": "failed",
+        "result": {
+          "success": false,
+          "error": {
+            "code": "GENERATION_FAILED",
+            "message": "Tripo API 余额不足，请充值后重试",
+            "recoverable": true
+          }
+        },
+        "completedAt": "2026-03-19T15:26:33.554Z"
+      }
+    },
+    "workflow": {
+      "id": "ccc29f39-5e30-4f60-b7da-cf93c5258412",
+      "name": "Agent: 帮我生成一个适合小红书的LV女包 3D 展示",
+      "description": "使用标准3D生成流程：分析商品 → 优化提示词 → 生成模型 → 质量检查",
+      "status": "failed",
+      "steps": [
+        {
+          "id": "step_1",
+          "tool": "analyze_product",
+          "input": {
+            "type": "static",
+            "value": {
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            }
+          },
+          "description": "分析商品特征"
+        },
+        {
+          "id": "step_2",
+          "tool": "optimize_prompt",
+          "input": {
+            "type": "static",
+            "value": {
+              "analysis": {
+                "type": "reference",
+                "stepId": "step_1",
+                "path": "."
+              },
+              "userDescription": "帮我生成一个适合小红书的LV女包 3D 展示"
+            }
+          },
+          "description": "优化生成提示词"
+        },
+        {
+          "id": "step_3",
+          "tool": "generate_3d",
+          "input": {
+            "type": "static",
+            "value": {
+              "prompt": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "."
+              }
+            }
+          },
+          "description": "生成3D模型"
+        },
+        {
+          "id": "step_4",
+          "tool": "quality_check",
+          "input": {
+            "type": "static",
+            "value": {
+              "modelUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "modelUrl"
+              },
+              "thumbnailUrl": {
+                "type": "reference",
+                "stepId": "step_3",
+                "path": "thumbnailUrl"
+              },
+              "expectedProductType": {
+                "type": "reference",
+                "stepId": "step_2",
+                "path": "productType"
+              },
+              "originalDescription": "帮我生成一个适合小红书的LV女包 3D 展示"
+            }
+          },
+          "description": "质量检查与验证"
+        }
+      ],
+      "results": {},
+      "trace": {
+        "workflowId": "ccc29f39-5e30-4f60-b7da-cf93c5258412",
+        "status": "failed",
+        "startTime": "2026-03-19T15:25:03.830Z",
+        "totalTokens": 6885,
+        "totalCost": 0,
+        "steps": [
+          {
+            "stepId": "step_1",
+            "toolName": "analyze_product",
+            "status": "success",
+            "input": {
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            },
+            "startTime": "2026-03-19T15:25:03.832Z",
+            "thoughts": [
+              {
+                "id": "step_1-thought-1773933903832",
+                "type": "reasoning",
+                "content": "分析任务：使用 analyze_product 工具处理 分析商品特征",
+                "timestamp": 1773933903832
+              },
+              {
+                "id": "step_1-thought-1773933942764",
+                "type": "action",
+                "content": "执行 analyze_product 工具",
+                "timestamp": 1773933942764
+              },
+              {
+                "id": "step_1-thought-1773933942765",
+                "type": "observation",
+                "content": "工具执行成功：{\"category\":\"bags\",\"subcategory\":\"女包\",\"style\":[\"luxury\",\"fashion\",\"classic\",\"chic\"],\"colors\":[\"brown\",\"beige\",\"gold\"],\"materials\":[\"leather\",\"coated canvas\",\"metal hardware\"],\"targetAudience\":\"时尚女性，奢侈",
+                "timestamp": 1773933942765
+              }
+            ],
+            "output": {
+              "category": "bags",
+              "subcategory": "女包",
+              "style": [
+                "luxury",
+                "fashion",
+                "classic",
+                "chic"
+              ],
+              "colors": [
+                "brown",
+                "beige",
+                "gold"
+              ],
+              "materials": [
+                "leather",
+                "coated canvas",
+                "metal hardware"
+              ],
+              "targetAudience": "时尚女性，奢侈品爱好者",
+              "priceRange": "luxury",
+              "keywords": [
+                "LV",
+                "路易威登",
+                "女包",
+                "Women's Bag",
+                "手袋",
+                "Handbag",
+                "奢侈品",
+                "Luxury"
+              ],
+              "confidence": 0.7,
+              "suggestedStyle": "luxury",
+              "platform": "xiaohongshu",
+              "displayContext": "适合小红书的种草风格，强调高级质感与社交分享属性"
+            },
+            "endTime": "2026-03-19T15:25:42.764Z",
+            "duration": 38932,
+            "tokensUsed": 3163,
+            "cost": 0
+          },
+          {
+            "stepId": "step_2",
+            "toolName": "optimize_prompt",
+            "status": "success",
+            "input": {
+              "analysis": {
+                "category": "bags",
+                "subcategory": "女包",
+                "style": [
+                  "luxury",
+                  "fashion",
+                  "classic",
+                  "chic"
+                ],
+                "colors": [
+                  "brown",
+                  "beige",
+                  "gold"
+                ],
+                "materials": [
+                  "leather",
+                  "coated canvas",
+                  "metal hardware"
+                ],
+                "targetAudience": "时尚女性，奢侈品爱好者",
+                "priceRange": "luxury",
+                "keywords": [
+                  "LV",
+                  "路易威登",
+                  "女包",
+                  "Women's Bag",
+                  "手袋",
+                  "Handbag",
+                  "奢侈品",
+                  "Luxury"
+                ],
+                "confidence": 0.7,
+                "suggestedStyle": "luxury",
+                "platform": "xiaohongshu",
+                "displayContext": "适合小红书的种草风格，强调高级质感与社交分享属性"
+              },
+              "userDescription": "帮我生成一个适合小红书的LV女包 3D 展示",
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            },
+            "startTime": "2026-03-19T15:25:42.767Z",
+            "thoughts": [
+              {
+                "id": "step_2-thought-1773933942767",
+                "type": "reasoning",
+                "content": "分析任务：使用 optimize_prompt 工具处理 优化生成提示词",
+                "timestamp": 1773933942767
+              },
+              {
+                "id": "step_2-thought-1773933992168",
+                "type": "action",
+                "content": "执行 optimize_prompt 工具",
+                "timestamp": 1773933992168
+              },
+              {
+                "id": "step_2-thought-1773933992172",
+                "type": "observation",
+                "content": "工具执行成功：{\"prompt\":\"A high-quality 3D model of a women's luxury handbag, classic designer style, premium leather texture, structured shape, placed on a warm wooden surface, soft natural daylight, cozy lifestyl",
+                "timestamp": 1773933992172
+              }
+            ],
+            "output": {
+              "prompt": "A high-quality 3D model of a women's luxury handbag, classic designer style, premium leather texture, structured shape, placed on a warm wooden surface, soft natural daylight, cozy lifestyle atmosphere, Instagram-worthy aesthetic, high quality texture, fashion accessory",
+              "style": "luxury, fashion, classic, chic, Xiaohongshu lifestyle",
+              "lighting": "柔和自然日光，侧光突出质感",
+              "background": "有机生活化背景，木质表面，温馨室内",
+              "camera": "略微俯视 45 度角，生活化场景视角",
+              "keywords": [
+                "women's handbag",
+                "luxury leather",
+                "wooden surface",
+                "natural lighting",
+                "lifestyle",
+                "fashion"
+              ],
+              "knowledgeReferences": [
+                "prod-048",
+                "light-038",
+                "prod-048b",
+                "prod-051",
+                "prod-048a",
+                "prod-049"
+              ],
+              "productType": "women's luxury handbag",
+              "confidence": 0.95
+            },
+            "endTime": "2026-03-19T15:26:32.167Z",
+            "duration": 49400,
+            "tokensUsed": 3722,
+            "cost": 0
+          },
+          {
+            "stepId": "step_3",
+            "toolName": "generate_3d",
+            "status": "failed",
+            "input": {
+              "prompt": {
+                "prompt": "A high-quality 3D model of a women's luxury handbag, classic designer style, premium leather texture, structured shape, placed on a warm wooden surface, soft natural daylight, cozy lifestyle atmosphere, Instagram-worthy aesthetic, high quality texture, fashion accessory",
+                "style": "luxury, fashion, classic, chic, Xiaohongshu lifestyle",
+                "lighting": "柔和自然日光，侧光突出质感",
+                "background": "有机生活化背景，木质表面，温馨室内",
+                "camera": "略微俯视 45 度角，生活化场景视角",
+                "keywords": [
+                  "women's handbag",
+                  "luxury leather",
+                  "wooden surface",
+                  "natural lighting",
+                  "lifestyle",
+                  "fashion"
+                ],
+                "knowledgeReferences": [
+                  "prod-048",
+                  "light-038",
+                  "prod-048b",
+                  "prod-051",
+                  "prod-048a",
+                  "prod-049"
+                ],
+                "productType": "women's luxury handbag",
+                "confidence": 0.95
+              },
+              "description": "帮我生成一个适合小红书的LV女包 3D 展示"
+            },
+            "startTime": "2026-03-19T15:26:32.175Z",
+            "thoughts": [
+              {
+                "id": "step_3-thought-1773933992175",
+                "type": "reasoning",
+                "content": "分析任务：使用 generate_3d 工具处理 生成3D模型",
+                "timestamp": 1773933992175
+              },
+              {
+                "id": "step_3-thought-1773933993554",
+                "type": "action",
+                "content": "执行 generate_3d 工具",
+                "timestamp": 1773933993554
+              },
+              {
+                "id": "step_3-thought-1773933993555",
+                "type": "observation",
+                "content": "工具执行失败：Tripo API 余额不足，请充值后重试",
+                "timestamp": 1773933993555
+              }
+            ],
+            "error": "Tripo API 余额不足，请充值后重试",
+            "endTime": "2026-03-19T15:26:33.554Z",
+            "duration": 1379
+          }
+        ],
+        "endTime": "2026-03-19T15:26:33.559Z",
+        "totalDuration": 89729
+      },
+      "createdAt": "2026-03-19T15:25:03.827Z",
+      "updatedAt": "2026-03-19T15:25:03.827Z",
+      "currentStep": 2
+    }
+  }
+}

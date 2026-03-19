@@ -3,6 +3,12 @@
  * 运行: npx tsx scripts/build-knowledge.ts
  */
 
+import dotenv from 'dotenv'
+import { join } from 'path'
+
+// 加载 .env.local 文件
+dotenv.config({ path: join(process.cwd(), '.env.local') })
+
 import { initCollection, upsertEntries, collectionExists, getStats } from '../lib/rag/qdrant'
 import { batchEmbedding } from '../lib/rag/embedding'
 import { knowledgeBase, getKnowledgeStats } from './knowledge-base'
@@ -22,13 +28,22 @@ async function buildKnowledgeBase() {
   }
   console.log('')
 
-  // 2. 检查环境变量
-  if (!process.env.DASHSCOPE_API_KEY) {
-    console.error('错误: 未设置 DASHSCOPE_API_KEY 环境变量')
+  // 2. 检查环境变量 (embedding.ts 使用 V1 API)
+  const hasDashScopeV1 = process.env.DASHSCOPE_API_KEY_V1 && process.env.DASHSCOPE_BASE_URL_V1
+  const hasOpenAI = process.env.OPENAI_API_KEY
+
+  if (!hasDashScopeV1 && !hasOpenAI) {
+    console.error('错误: 需要配置以下环境变量之一:')
+    console.error('  - DASHSCOPE_API_KEY_V1 + DASHSCOPE_BASE_URL_V1 (推荐)')
+    console.error('  - OPENAI_API_KEY')
     process.exit(1)
   }
 
-  console.log('DASHSCOPE_API_KEY 已配置 ✓')
+  if (hasDashScopeV1) {
+    console.log('DASHSCOPE_API_KEY_V1 已配置 ✓')
+  } else {
+    console.log('OPENAI_API_KEY 已配置 ✓')
+  }
 
   // 3. 初始化 Collection（必须在 getStats 之前，确保索引存在）
   console.log('\n初始化 Collection...')

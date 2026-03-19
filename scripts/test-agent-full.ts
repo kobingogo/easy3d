@@ -249,3 +249,6 @@ runAllTests()
     console.error('Fatal error:', error)
     process.exit(1)
   })
+
+// Make this a module to avoid identifier conflicts
+export {}

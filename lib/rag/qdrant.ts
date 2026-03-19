@@ -209,7 +209,7 @@ export async function vectorSearch(
 
   return response.map(r => ({
     entry: {
-      id: r.id as string,
+      id: (r.payload?.originalId as string) || (r.id as string),
       text: r.payload?.text as string,
       category: r.payload?.category as KnowledgeCategory,
       tags: r.payload?.tags as string[] || [],

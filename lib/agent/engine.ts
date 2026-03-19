@@ -8,10 +8,17 @@ import type {
   StepResult,
   ToolContext,
   ToolResult,
-  StepInput
+  StepInput,
+  Thought
 } from './types'
 import { Tracer } from './tracer'
 import { getTool } from './tools'
+import {
+  publishStepStartEvent,
+  publishStepEndEvent,
+  publishThoughtEvent,
+  publishWorkflowCompleteEvent
+} from './workflow-store'
 
 export interface WorkflowEngineResult {
   workflow: Workflow
@@ -33,8 +40,24 @@ export class WorkflowEngine {
       const step = workflow.steps[i]
       workflow.currentStep = i
 
+      // 解析输入（提前解析，用于 SSE 事件）
+      const input = this.resolveInput(step.input, results, imageUrl, userDescription)
+
+      // 发布步骤开始事件
+      await publishStepStartEvent(workflow.id, step.id, step.tool, input)
+
       // 开始追踪
-      tracer.startStep(step.id, step.tool, step.input)
+      tracer.startStep(step.id, step.tool, input)
+
+      // 记录 reasoning thought
+      const reasoningThought = `分析任务：使用 ${step.tool} 工具处理 ${step.description || step.id}`
+      tracer.recordThought(step.id, 'reasoning', reasoningThought)
+      await publishThoughtEvent(workflow.id, step.id, {
+        id: `${step.id}-thought-reasoning-${Date.now()}`,
+        type: 'reasoning',
+        content: reasoningThought,
+        timestamp: Date.now()
+      })
 
       // 执行步骤
       const stepResult = await this.executeStep(
@@ -47,6 +70,37 @@ export class WorkflowEngine {
       )
       results.set(step.id, stepResult)
 
+      // 记录 action thought
+      const actionThought = `执行 ${step.tool} 工具`
+      tracer.recordThought(step.id, 'action', actionThought)
+      await publishThoughtEvent(workflow.id, step.id, {
+        id: `${step.id}-thought-action-${Date.now()}`,
+        type: 'action',
+        content: actionThought,
+        timestamp: Date.now()
+      })
+
+      // 记录 observation thought
+      const observationThought = stepResult.status === 'success'
+        ? `工具执行成功：${JSON.stringify(stepResult.result?.data || {}).slice(0, 200)}`
+        : `工具执行失败：${stepResult.result?.error?.message || 'Unknown error'}`
+      tracer.recordThought(step.id, 'observation', observationThought)
+      await publishThoughtEvent(workflow.id, step.id, {
+        id: `${step.id}-thought-observation-${Date.now()}`,
+        type: 'observation',
+        content: observationThought,
+        timestamp: Date.now()
+      })
+
+      // 发布步骤结束事件
+      await publishStepEndEvent(
+        workflow.id,
+        step.id,
+        stepResult.status,
+        stepResult.result?.data,
+        stepResult.result?.error?.message
+      )
+
       // 处理失败
       if (stepResult.status === 'failed') {
         const handled = await this.handleError(step, stepResult, results, tracer)
@@ -54,6 +108,7 @@ export class WorkflowEngine {
           tracer.complete('failed')
           workflow.status = 'failed'
           workflow.trace = tracer.getTrace()
+          await publishWorkflowCompleteEvent(workflow.id, 'failed', workflow.trace)
           return { workflow, results }
         }
       }
@@ -62,6 +117,7 @@ export class WorkflowEngine {
     tracer.complete('completed')
     workflow.status = 'completed'
     workflow.trace = tracer.getTrace()
+    await publishWorkflowCompleteEvent(workflow.id, 'completed', workflow.trace)
 
     return { workflow, results }
   }

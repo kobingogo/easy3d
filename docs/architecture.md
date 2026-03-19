@@ -20,11 +20,11 @@ Easy3D 是一个 AI 驱动的 3D 商品展示生成平台，核心展示三大 A
 
 ### 1.2 核心价值
 
-| 能力 | 面试展示点 | 商业价值 |
-|------|-----------|---------|
-| RAG | 向量检索、知识库构建 | 电商场景知识问答 |
-| Agent | ReAct模式、工具编排 | 自动化3D生成流程 |
-| Prompt优化 | 模板系统、质量评估 | 提升生成效果40%+ |
+| 能力       | 面试展示点           | 商业价值         |
+| ---------- | -------------------- | ---------------- |
+| RAG        | 向量检索、知识库构建 | 电商场景知识问答 |
+| Agent      | ReAct模式、工具编排  | 自动化3D生成流程 |
+| Prompt优化 | 模板系统、质量评估   | 提升生成效果40%+ |
 
 ---
 
@@ -98,25 +98,25 @@ Easy3D 是一个 AI 驱动的 3D 商品展示生成平台，核心展示三大 A
 
 #### Frontend
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Next.js | 15 | App Router 全栈框架 |
-| React | 19 | UI 组件 |
-| TypeScript | 5 | 类型安全 |
-| Three.js | - | 3D 渲染 |
-| @react-three/fiber | - | React 3D 封装 |
-| Tailwind CSS | - | 原子化样式 |
-| shadcn/ui | - | UI 组件库 |
-| Framer Motion | - | 动画 |
+| 技术               | 版本 | 用途                |
+| ------------------ | ---- | ------------------- |
+| Next.js            | 15   | App Router 全栈框架 |
+| React              | 19   | UI 组件             |
+| TypeScript         | 5    | 类型安全            |
+| Three.js           | -    | 3D 渲染             |
+| @react-three/fiber | -    | React 3D 封装       |
+| Tailwind CSS       | -    | 原子化样式          |
+| shadcn/ui          | -    | UI 组件库           |
+| Framer Motion      | -    | 动画                |
 
 #### Backend
 
-| 服务 | 用途 | 配置 |
-|------|------|------|
-| Supabase | PostgreSQL + Storage + Auth | 云托管 |
-| Qdrant | 向量数据库 | Docker 本地 |
-| 阿里云百炼 | LLM + Embedding | API 调用 |
-| Tripo AI | 3D 模型生成 | API 调用 |
+| 服务       | 用途                        | 配置        |
+| ---------- | --------------------------- | ----------- |
+| Supabase   | PostgreSQL + Storage + Auth | 云托管      |
+| Qdrant     | 向量数据库                  | Docker 本地 |
+| 阿里云百炼 | LLM + Embedding             | API 调用    |
+| Tripo AI   | 3D 模型生成                 | API 调用    |
 
 ---
 
@@ -152,35 +152,35 @@ Easy3D 是一个 AI 驱动的 3D 商品展示生成平台，核心展示三大 A
 ```typescript
 // 1. ReActPlanner - 任务规划
 class ReActPlanner {
-  plan(userInput: string): ExecutionPlan
-  getDefaultPlan(userInput: string): ExecutionPlan
+  plan(userInput: string): ExecutionPlan;
+  getDefaultPlan(userInput: string): ExecutionPlan;
 }
 
 // 2. WorkflowEngine - 工作流执行
 class WorkflowEngine {
-  execute(workflow: Workflow): Promise<WorkflowEngineResult>
-  executeStep(step: WorkflowStep): Promise<StepResult>
-  resolveInput(input: StepInput): any
+  execute(workflow: Workflow): Promise<WorkflowEngineResult>;
+  executeStep(step: WorkflowStep): Promise<StepResult>;
+  resolveInput(input: StepInput): any;
 }
 
 // 3. Tracer - 执行追踪
 class Tracer {
-  startStep(stepId: string, toolName: string, input: any)
-  endStepSuccess(stepId: string, output: any)
-  endStepFailed(stepId: string, error: string)
-  getTrace(): ExecutionTrace
+  startStep(stepId: string, toolName: string, input: any);
+  endStepSuccess(stepId: string, output: any);
+  endStepFailed(stepId: string, error: string);
+  getTrace(): ExecutionTrace;
 }
 ```
 
 #### 工具注册表
 
-| 工具名 | 功能 | 输入 | 输出 |
-|--------|------|------|------|
-| `analyze_product` | 商品分析 | imageUrl/description | ProductAnalysis |
-| `optimize_prompt` | 提示词优化 | ProductAnalysis | OptimizedPrompt |
-| `generate_3d` | 3D生成 | imageUrl/prompt | GenerationResult |
-| `quality_check` | 质量检查 | modelUrl, analysis | QualityCheckResult |
-| `export_model` | 模型导出 | modelUrl, format | ExportResult |
+| 工具名            | 功能       | 输入                 | 输出               |
+| ----------------- | ---------- | -------------------- | ------------------ |
+| `analyze_product` | 商品分析   | imageUrl/description | ProductAnalysis    |
+| `optimize_prompt` | 提示词优化 | ProductAnalysis      | OptimizedPrompt    |
+| `generate_3d`     | 3D生成     | imageUrl/prompt      | GenerationResult   |
+| `quality_check`   | 质量检查   | modelUrl, analysis   | QualityCheckResult |
+| `export_model`    | 模型导出   | modelUrl, format     | ExportResult       |
 
 ### 3.2 RAG 模块
 
@@ -193,7 +193,7 @@ class Tracer {
 │  Query ──▶ Embedding ──▶ Qdrant Search ──▶ Rerank   │
 │               │              │              │        │
 │               ▼              ▼              ▼        │
-│         text-embedding-v3  Vector DB    qwen-plus   │
+│         text-embedding-v3  Vector DB    qwen3.5-plus   │
 │           (1024维)         (Docker)     (重排序)    │
 │                                                      │
 │  Knowledge Base: 130条专家知识，5大分类              │
@@ -214,22 +214,22 @@ lib/rag/
 
 #### 风格模板系统
 
-| 模板 | 适用场景 | 特点 |
-|------|---------|------|
-| `minimal` | 简约风格商品 | 干净背景、柔和光照 |
-| `luxury` | 奢侈品、高端商品 | 优雅、精致、戏剧光效 |
-| `tech` | 电子产品 | 未来感、金属质感 |
-| `natural` | 自然产品 | 自然光、环境融合 |
-| `trendy` | 潮流商品 | 动感、时尚 |
+| 模板      | 适用场景         | 特点                 |
+| --------- | ---------------- | -------------------- |
+| `minimal` | 简约风格商品     | 干净背景、柔和光照   |
+| `luxury`  | 奢侈品、高端商品 | 优雅、精致、戏剧光效 |
+| `tech`    | 电子产品         | 未来感、金属质感     |
+| `natural` | 自然产品         | 自然光、环境融合     |
+| `trendy`  | 潮流商品         | 动感、时尚           |
 
 #### 平台适配
 
-| 平台 | 风格特征 | 关键词 |
-|------|---------|--------|
+| 平台   | 风格特征       | 关键词             |
+| ------ | -------------- | ------------------ |
 | 小红书 | 生活化、氛围感 | 种草、精致、氛围感 |
-| 淘宝 | 专业、干净 | 商品展示、专业 |
-| 抖音 | 潮流、动感 | 吸睛、潮流 |
-| Amazon | 简洁、标准化 | 专业、标准化 |
+| 淘宝   | 专业、干净     | 商品展示、专业     |
+| 抖音   | 潮流、动感     | 吸睛、潮流         |
+| Amazon | 简洁、标准化   | 专业、标准化       |
 
 ---
 
@@ -341,23 +341,23 @@ services:
 
 ### 6.1 目标指标
 
-| 指标 | 目标值 | 当前状态 |
-|------|--------|---------|
-| RAG 检索准确率 | > 85% | ✅ 达成 |
-| Agent 工作流成功率 | > 90% | ✅ 达成 |
-| Prompt 优化质量提升 | > 40% | ✅ 达成 |
-| 3D 生成延迟 | < 2min | ✅ 达成 |
-| 首屏加载时间 | < 3s | ⏳ 优化中 |
+| 指标                | 目标值 | 当前状态  |
+| ------------------- | ------ | --------- |
+| RAG 检索准确率      | > 85%  | ✅ 达成   |
+| Agent 工作流成功率  | > 90%  | ✅ 达成   |
+| Prompt 优化质量提升 | > 40%  | ✅ 达成   |
+| 3D 生成延迟         | < 2min | ✅ 达成   |
+| 首屏加载时间        | < 3s   | ⏳ 优化中 |
 
 ### 6.2 监控指标
 
 ```typescript
 // Tracer 记录的指标
 interface ExecutionTrace {
-  totalDuration: number      // 总耗时
-  totalTokens: number        // Token 消耗
-  totalCost: number          // 成本（包月）
-  steps: StepTrace[]         // 步骤详情
+  totalDuration: number; // 总耗时
+  totalTokens: number; // Token 消耗
+  totalCost: number; // 成本（包月）
+  steps: StepTrace[]; // 步骤详情
 }
 ```
 
@@ -386,18 +386,18 @@ interface ExecutionTrace {
 ```typescript
 // 添加新工具只需实现 Tool 接口
 interface Tool<TInput, TOutput> {
-  type: 'function'
+  type: "function";
   function: {
-    name: string
-    description: string
-    parameters: Record<string, any>
-  }
-  handler: ToolHandler<TInput, TOutput>
-  config?: ToolConfig
+    name: string;
+    description: string;
+    parameters: Record<string, any>;
+  };
+  handler: ToolHandler<TInput, TOutput>;
+  config?: ToolConfig;
 }
 
 // 注册到工具注册表
-toolRegistry.set('new_tool', newTool)
+toolRegistry.set("new_tool", newTool);
 ```
 
 ### 8.2 工作流模板

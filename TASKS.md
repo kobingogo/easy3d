@@ -8,27 +8,27 @@
 
 ## 📊 进度总览
 
-| Phase | 周次 | 重点 | 状态 | 核心交付 |
-|-------|------|------|------|----------|
-| Phase 1 | Week 1-2 | 基础架构 | ✅ 完成 | MVP + 3D 生成流程 |
-| Phase 2 | Week 3-4 | RAG 能力 | ✅ 完成 | 知识库 + 向量检索 |
-| Phase 3 | Week 5-6 | Agent 能力 | ✅ 完成 | 工作流引擎 + 控制台 |
-| Phase 4 | Week 7-8 | Prompt 优化 | ✅ 完成 | 风格模板 + 评估系统 |
-| Phase 5 | Week 9 | 面试准备 | 🔵 进行中 | 文档 + 演示 |
+| Phase   | 周次     | 重点        | 状态      | 核心交付            |
+| ------- | -------- | ----------- | --------- | ------------------- |
+| Phase 1 | Week 1-2 | 基础架构    | ✅ 完成   | MVP + 3D 生成流程   |
+| Phase 2 | Week 3-4 | RAG 能力    | ✅ 完成   | 知识库 + 向量检索   |
+| Phase 3 | Week 5-6 | Agent 能力  | ✅ 完成   | 工作流引擎 + 控制台 |
+| Phase 4 | Week 7-8 | Prompt 优化 | ✅ 完成   | 风格模板 + 评估系统 |
+| Phase 5 | Week 9   | 面试准备    | 🔵 进行中 | 文档 + 演示         |
 
 ---
 
 ## 技术栈 (已实现)
 
-| 模块 | 技术 |
-|------|------|
-| 前端框架 | Next.js 15 + React 19 |
-| UI 组件 | shadcn/ui + Tailwind CSS |
-| 3D 展示 | Three.js + @react-three/fiber |
-| 后端服务 | Supabase (PostgreSQL + Storage) |
-| 向量数据库 | Qdrant |
-| LLM 服务 | 阿里云百炼 (qwen-plus, text-embedding-v3) |
-| 3D 生成 | Tripo AI API |
+| 模块       | 技术                                         |
+| ---------- | -------------------------------------------- |
+| 前端框架   | Next.js 15 + React 19                        |
+| UI 组件    | shadcn/ui + Tailwind CSS                     |
+| 3D 展示    | Three.js + @react-three/fiber                |
+| 后端服务   | Supabase (PostgreSQL + Storage)              |
+| 向量数据库 | Qdrant                                       |
+| LLM 服务   | 阿里云百炼 (qwen3.5-plus, text-embedding-v3) |
+| 3D 生成    | Tripo AI API                                 |
 
 ---
 
@@ -44,6 +44,7 @@
 - [x] API 路由 (upload, generate, models)
 
 **关键文件**:
+
 - `lib/supabase/` - Supabase 客户端
 - `lib/tripo/` - Tripo API 封装
 - `components/upload/UploadZone.tsx` - 拖拽上传
@@ -63,6 +64,7 @@
 - [x] 知识管理 UI (`/knowledge`)
 
 **关键文件**:
+
 - `lib/rag/qdrant.ts` - 向量数据库
 - `lib/rag/embedding.ts` - 向量化
 - `lib/rag/knowledge-base.ts` - 知识数据
@@ -89,6 +91,7 @@
 - [x] Agent API (plan, execute, run)
 
 **关键文件**:
+
 - `lib/agent/tools.ts` - 工具定义
 - `lib/agent/planner.ts` - 任务规划
 - `lib/agent/workflow.ts` - 工作流引擎
@@ -109,6 +112,7 @@
 - [x] 效果对比展示 (`/fine-tune`)
 
 **关键文件**:
+
 - `lib/fine-tune/prompt-optimizer.ts` - 优化引擎
 - `lib/fine-tune/evaluate.ts` - 评估模块
 - `app/api/fine-tune/` - API 路由
@@ -122,22 +126,26 @@
 **目标**: 完整的面试作品集
 
 ### 5.1 演示流程设计
+
 - [ ] 设计 5 分钟演示脚本
 - [ ] 准备 3 个典型场景 (RAG/Agent/Prompt)
 - [ ] 录制 Demo 视频
 
 ### 5.2 性能优化
+
 - [ ] 首屏加载优化 (目标 < 3s)
 - [ ] 图片压缩和懒加载
 - [ ] API 响应缓存
 
 ### 5.3 文档完善
+
 - [x] 架构设计文档 `docs/architecture.md`
 - [x] AI 能力详解 `docs/ai-design.md`
 - [x] API 文档 `docs/api.md`
 - [x] 面试讲解稿 `docs/interview-guide.md`
 
 ### 5.4 GitHub 优化
+
 - [ ] README.md 完善 (能力展示 + Demo 截图)
 - [ ] 添加 Demo GIF
 - [ ] 技术博客链接
@@ -178,24 +186,24 @@ npm run dev
 
 ### 5. 访问应用
 
-| 页面 | URL |
-|------|-----|
-| 首页 | http://localhost:3000 |
-| 3D 生成 | http://localhost:3000/generate |
-| Agent 控制台 | http://localhost:3000/agent |
-| RAG 知识库 | http://localhost:3000/knowledge |
-| Prompt 优化 | http://localhost:3000/fine-tune |
+| 页面         | URL                             |
+| ------------ | ------------------------------- |
+| 首页         | http://localhost:3000           |
+| 3D 生成      | http://localhost:3000/generate  |
+| Agent 控制台 | http://localhost:3000/agent     |
+| RAG 知识库   | http://localhost:3000/knowledge |
+| Prompt 优化  | http://localhost:3000/fine-tune |
 
 ---
 
 ## 📈 成功指标
 
-| 指标 | 目标 | 当前 |
-|------|------|------|
-| RAG 检索准确率 | > 85% | ✅ 达成 |
-| Agent 工作流成功率 | > 90% | ✅ 达成 |
-| Prompt 优化质量提升 | > 40% | ✅ 达成 |
-| 单元测试覆盖率 | > 80% | ⏳ 待实现 |
+| 指标                | 目标  | 当前      |
+| ------------------- | ----- | --------- |
+| RAG 检索准确率      | > 85% | ✅ 达成   |
+| Agent 工作流成功率  | > 90% | ✅ 达成   |
+| Prompt 优化质量提升 | > 40% | ✅ 达成   |
+| 单元测试覆盖率      | > 80% | ⏳ 待实现 |
 
 ---
 

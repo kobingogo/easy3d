@@ -5,7 +5,7 @@
  * 注意：百炼 Coding Plan Pro 为包月套餐，不按 token 计费
  */
 
-import type { ExecutionTrace, StepTrace, VisualizationData } from './types'
+import type { ExecutionTrace, StepTrace, Thought, VisualizationData } from './types'
 import { calculateCost } from './llm'
 
 export class Tracer {
@@ -31,7 +31,26 @@ export class Tracer {
       toolName,
       status: 'running',
       input,
-      startTime: new Date()
+      startTime: new Date(),
+      thoughts: []  // 初始化思维链
+    })
+  }
+
+  /**
+   * 记录思维链
+   * @param stepId 步骤 ID
+   * @param type 思维类型：reasoning（推理）、action（动作）、observation（观察）
+   * @param content 思维内容
+   */
+  recordThought(stepId: string, type: Thought['type'], content: string): void {
+    const step = this.trace.steps.find(s => s.stepId === stepId)
+    if (!step) return
+
+    step.thoughts.push({
+      id: `${stepId}-thought-${Date.now()}`,
+      type,
+      content,
+      timestamp: Date.now()
     })
   }
 
@@ -117,7 +136,8 @@ export class Tracer {
         status: step.status,
         duration: step.duration || 0,
         tokens: step.tokensUsed || 0,
-        cost: '包月'
+        cost: '包月',
+        thoughts: step.thoughts  // 包含思维链
       }))
     }
   }

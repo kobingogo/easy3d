@@ -4,7 +4,7 @@
 
 ## 1. 当前架构评估
 
-- **检索流程**：采用了标准的二阶段检索（Qdrant 向量检索 + `qwen-plus` 模型重排序）。
+- **检索流程**：采用了标准的二阶段检索（Qdrant 向量检索 + `qwen3.5-plus` 模型重排序）。
 - **知识储备**：拥有 ~130 条高质量的手动录入知识，涵盖品类规范、场景设计、灯光参数及平台标准。
 - **集成方式**：已对外提供语义搜索（Search）、智能问答（Ask）和展示建议（Suggest）三个核心 API。
 
@@ -16,24 +16,30 @@
 ## 2. 生产级技术强化路径
 
 ### A. 混合检索（Hybrid Search）
+
 目前 100% 依赖向量检索。在生产环境中，向量检索有时会由于距离计算误差，错过精确的关键词匹配（如产品型号 "iPhone 16 Pro"）。
+
 - **方案**：在 [lib/rag/qdrant.ts](file:///Users/bingo/.openclaw/workspace/projects/easy3d/lib/rag/qdrant.ts) 中引入 **Sparse Vector**（稀疏向量）或辅助的 **BM25** 关键词索引。
 - **融合算法**：使用 **RRF (Reciprocal Rank Fusion)** 对语义分数和关键词分数进行加权融合，确保搜索“既懂意思，又准词语”。
 
 ### B. 专用重排序模型（Reranker）
-目前使用 `qwen-plus` 大模型进行重排，虽然精度高，但延迟大（1-2秒）且成本较高。
+
+目前使用 `qwen3.5-plus` 大模型进行重排，虽然精度高，但延迟大（1-2秒）且成本较高。
+
 - **方案**：引入专用的 **Cross-Encoder 重排模型**（如 BGE-Reranker）。
 - **改进点**：专有模型在排序任务上更敏捷，响应时间可降至毫秒级，同时更好地过滤掉向量检索阶段召回的低质量结果。
 
 ### C. 自动化知识工程管道
+
 - **方案**：从手动维护 [knowledge-base.ts](file:///Users/bingo/.openclaw/workspace/projects/easy3d/scripts/knowledge-base.ts) 转向动态摄取。
 - **技术细节**：引入 **语义切片 (Semantic Chunking)**，不再死板地按 500 字切分，而是根据上下文语义边界断句。这对于处理复杂的《电商展示规范 PDF》至关重要。
 
 ### D. RAG 评估体系 (RAGAS)
+
 - **方案**：引入自动化评估指标。
-    - **忠实度 (Faithfulness)**：回答是否完全基于检索到的上下文，防止 AI 幻觉。
-    - **答案相关度 (Answer Relevance)**：回答是否真正解决了用户的问题。
-    - **检索精度 (Context Precision)**：搜出来的资料到底对不对。
+  - **忠实度 (Faithfulness)**：回答是否完全基于检索到的上下文，防止 AI 幻觉。
+  - **答案相关度 (Answer Relevance)**：回答是否真正解决了用户的问题。
+  - **检索精度 (Context Precision)**：搜出来的资料到底对不对。
 
 ---
 

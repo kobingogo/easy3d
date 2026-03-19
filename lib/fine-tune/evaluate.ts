@@ -136,7 +136,7 @@ const EVALUATION_CRITERIA = {
 // ==================== LLM 评估函数 ====================
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY
-const DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+const DASHSCOPE_BASE_URL = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 
 /**
  * 使用 LLM 评估提示词质量
@@ -195,7 +195,7 @@ ${context.platform ? `平台：${context.platform}` : ''}
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'qwen-plus',
+        model: 'qwen3.5-plus',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

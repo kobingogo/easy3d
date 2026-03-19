@@ -11,7 +11,11 @@
     "start:all": "./scripts/start.sh",
     "stop:all": "./scripts/stop.sh",
     "status": "./scripts/status.sh",
-    "build:knowledge": "npx tsx scripts/build-knowledge.ts"
+    "build:knowledge": "npx tsx scripts/build-knowledge.ts",
+    "test:rag": "npx tsx scripts/rag-benchmark.ts",
+    "test:rag:verbose": "npx tsx scripts/rag-benchmark.ts --verbose",
+    "test:ragas": "npx tsx scripts/ragas-evaluate.ts",
+    "test:ragas:verbose": "npx tsx scripts/ragas-evaluate.ts --verbose"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
@@ -23,6 +27,7 @@
     "@types/three": "^0.183.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.577.0",
     "next": "15.2.3",
     "next-auth": "^4.24.13",

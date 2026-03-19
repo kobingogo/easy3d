@@ -1,37 +1,55 @@
 /**
  * Reranker 模块
- * 使用 LLM 对检索结果进行重排序，提升准确率 5-10%
+ * 使用 DashScope TextReRank API 进行高效重排序
+ * 从 LLM-based (~9-10s) 替换为专用 Reranker 模型 (<200ms)
  */
 
-import OpenAI from 'openai'
 import type { SearchResult, RerankResult } from './types'
 
-// Lazy initialization - client created on first use, not at module load time
-// This ensures env vars are loaded before client creation
-let _client: OpenAI | null = null
+// DashScope TextReRank API 配置
+const RERANK_MODEL = process.env.DASHSCOPE_RERANK_MODEL || 'gte-rerank-v2'
 
-/**
- * Get or create the reranker client (lazy initialization)
- * Uses DashScope V1 API (supports qwen-plus model)
- * Coding Plan does not support qwen-plus, must use standard API
- */
-function getClient(): OpenAI {
-  if (_client) {
-    return _client
+interface TextReRankRequest {
+  model: string
+  input: {
+    query: string
+    documents: string[]
   }
+  parameters?: {
+    top_k?: number
+    return_documents?: boolean
+  }
+}
 
-  _client = new OpenAI({
-    apiKey: process.env.DASHSCOPE_API_KEY_V1 || process.env.DASHSCOPE_API_KEY,
-    baseURL: process.env.DASHSCOPE_BASE_URL_V1 || process.env.DASHSCOPE_BASE_URL
-  })
-
-  console.log('[Reranker] Client initialized with DashScope API')
-
-  return _client
+interface TextReRankResponse {
+  output: {
+    results: Array<{
+      index: number
+      relevance_score: number
+      document?: string
+    }>
+  }
+  usage: {
+    total_tokens: number
+  }
 }
 
 /**
- * 使用 qwen3-vl-rerank 对文档相关性打分
+ * 获取 DashScope API 配置
+ */
+function getApiConfig() {
+  const baseURL = process.env.DASHSCOPE_BASE_URL_V1 || process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+  const apiKey = process.env.DASHSCOPE_API_KEY_V1 || process.env.DASHSCOPE_API_KEY
+
+  if (!apiKey) {
+    throw new Error('DASHSCOPE_API_KEY is required for reranking')
+  }
+
+  return { baseURL, apiKey }
+}
+
+/**
+ * 使用 DashScope TextReRank API 对文档相关性打分
  * @param query 查询文本
  * @param documents 文档列表
  * @param topK 返回前 K 个结果
@@ -44,54 +62,60 @@ export async function rerank(
 
   if (documents.length === 0) return []
 
-  const client = getClient()
+  const { baseURL, apiKey } = getApiConfig()
+  const startTime = Date.now()
 
-  // 文档过长时截断
+  // 文档过长时截断 (gte-rerank-v2 最大支持 8192 tokens)
   const truncatedDocs = documents.map(doc =>
-    doc.length > 500 ? doc.substring(0, 500) + '...' : doc
+    doc.length > 1000 ? doc.substring(0, 1000) + '...' : doc
   )
 
-  const response = await client.chat.completions.create({
-    model: 'qwen-plus',
-    messages: [{
-      role: 'user',
-      content: `你是一个相关性评估专家。请对以下文档与查询的相关性进行打分。
-
-查询：${query}
-
-文档列表：
-${truncatedDocs.map((doc, i) => `[${i}] ${doc}`).join('\n\n')}
-
-请返回 JSON 格式：
-{
-  "scores": [
-    { "index": 0, "score": 0.95 },
-    { "index": 1, "score": 0.72 }
-  ]
-}
-
-评分标准：0-1 之间，1 表示完全相关，0 表示完全不相关。只返回 JSON，不要其他内容。`
-    }],
-    response_format: { type: 'json_object' }
-  })
+  const requestBody: TextReRankRequest = {
+    model: RERANK_MODEL,
+    input: {
+      query,
+      documents: truncatedDocs
+    },
+    parameters: {
+      top_k: Math.min(topK, documents.length),
+      return_documents: false
+    }
+  }
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{"scores":[]}')
+    // TextReRank API only available via native DashScope API path (not OpenAI-compatible mode)
+    const rerankUrl = 'https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank'
+    const response = await fetch(rerankUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    })
 
-    // 按分数降序排列，返回 topK
-    return result.scores
-      .sort((a: any, b: any) => b.score - a.score)
-      .slice(0, topK)
-      .map((item: any) => ({
-        index: item.index,
-        relevanceScore: item.score
-      }))
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`TextReRank API error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json() as TextReRankResponse
+
+    const elapsed = Date.now() - startTime
+    console.log(`[Reranker] TextReRank completed in ${elapsed}ms using ${RERANK_MODEL}`)
+
+    // 转换为标准格式
+    return data.output.results.map(result => ({
+      index: result.index,
+      relevanceScore: result.relevance_score
+    }))
+
   } catch (error) {
-    console.error('Rerank parsing error:', error)
-    // 解析失败时返回原始顺序
+    console.error('[Reranker] TextReRank API failed:', error)
+    // 降级：返回原始顺序（按相似度分数）
     return documents.slice(0, topK).map((_, i) => ({
       index: i,
-      relevanceScore: 0.5
+      relevanceScore: 1 - (i * 0.1) // 递减分数
     }))
   }
 }

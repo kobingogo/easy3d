@@ -3,7 +3,7 @@
  * 用于测试四步完整流程：analyze → optimize → generate → quality_check
  */
 
-import { generate, type LLMCall } from '../lib/agent/llm'
+import { generate } from '../lib/agent/llm'
 
 interface TestConfig {
   description: string
@@ -40,12 +40,9 @@ async function testAgentWorkflow(config: TestConfig) {
     // 1. 商品分析
     console.log('\n[1/4] 📊 商品分析...')
     const analysisResult = await generate({
-      model: 'qwen-vl-max',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: `分析这个商品：
+      messages: [{
+        role: 'user',
+        content: `分析这个商品：
 描述：${config.description}
 
 请返回 JSON 格式：
@@ -55,10 +52,8 @@ async function testAgentWorkflow(config: TestConfig) {
   "material": "材质",
   "targetAudience": "目标用户"
 }`
-            }
-          ]
-        }
-      ],
+      }],
+      model: 'qwen3.5-plus',
       responseFormat: { type: 'json_object' }
     })
 
@@ -67,11 +62,9 @@ async function testAgentWorkflow(config: TestConfig) {
     // 2. 优化提示词
     console.log('\n[2/4] ✨ 优化提示词...')
     const optimizeResult = await generate({
-      model: 'qwen-plus',
-      messages: [
-        {
-          role: 'user',
-          content: `根据以下商品分析，生成专业的英文提示词用于 Tripo 3D 生成：
+      messages: [{
+        role: 'user',
+        content: `根据以下商品分析，生成专业的英文提示词用于 Tripo 3D 生成：
 
 商品分析：${analysisResult.content}
 
@@ -82,8 +75,8 @@ async function testAgentWorkflow(config: TestConfig) {
 4. 高质量渲染
 
 请返回纯文本提示词，不要包含 JSON。`
-        }
-      ]
+      }],
+      model: 'qwen3.5-plus'
     })
 
     console.log('✅ 提示词优化完成:', optimizeResult.content.slice(0, 200))

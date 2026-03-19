@@ -175,3 +175,6 @@ async function runTests() {
 }
 
 runTests()
+
+// Make this a module to avoid identifier conflicts
+export {}

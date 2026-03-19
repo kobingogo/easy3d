@@ -37,3 +37,6 @@ async function test() {
 }
 
 test()
+
+// Make this a module to avoid identifier conflicts
+export {}

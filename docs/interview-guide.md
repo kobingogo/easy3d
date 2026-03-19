@@ -33,11 +33,11 @@
 
 ### 1.3 技术亮点速览
 
-| 能力 | 技术实现 | 亮点 |
-|------|---------|------|
-| **RAG** | Qdrant + 阿里云 Embedding | 130条专家知识，检索准确率 >85% |
-| **Agent** | ReAct + WorkflowEngine | 5个工具编排，成功率 >90% |
-| **Prompt** | 模板系统 + LLM评估 | 质量提升 >40% |
+| 能力       | 技术实现                  | 亮点                           |
+| ---------- | ------------------------- | ------------------------------ |
+| **RAG**    | Qdrant + 阿里云 Embedding | 130条专家知识，检索准确率 >85% |
+| **Agent**  | ReAct + WorkflowEngine    | 5个工具编排，成功率 >90%       |
+| **Prompt** | 模板系统 + LLM评估        | 质量提升 >40%                  |
 
 ---
 
@@ -55,7 +55,7 @@
 用户问题 ──▶ Embedding ──▶ 向量检索 ──▶ Reranker ──▶ 生成答案
     │            │             │            │
     ▼            ▼             ▼            ▼
-  自然语言   text-embedding   Qdrant     qwen-plus
+  自然语言   text-embedding   Qdrant     qwen3.5-plus
            -v3 (1024维)     (Docker)    (重排序)
 ```
 
@@ -63,17 +63,17 @@
 
 ```typescript
 // 1. 向量化：使用阿里云百炼 text-embedding-v3
-const embedding = await getEmbedding(query)  // 返回 1024 维向量
+const embedding = await getEmbedding(query); // 返回 1024 维向量
 
 // 2. 向量检索：Qdrant 相似度搜索
-const results = await qdrant.search('knowledge', {
+const results = await qdrant.search("knowledge", {
   vector: embedding,
   limit: 5,
-  score_threshold: 0.7  // 相似度阈值
-})
+  score_threshold: 0.7, // 相似度阈值
+});
 
 // 3. Reranker：使用 LLM 重排序提升准确率
-const reranked = await rerankWithLLM(query, results)
+const reranked = await rerankWithLLM(query, results);
 ```
 
 #### 面试问答预设
@@ -81,6 +81,7 @@ const reranked = await rerankWithLLM(query, results)
 **Q: 为什么选择 Qdrant 而不是 Pinecone？**
 
 > A: "主要有三点考虑：
+>
 > 1. **开发便利性**：Qdrant 可以通过 Docker 本地部署，开发调试更方便
 > 2. **成本控制**：本地开发免费，生产环境可以选择 Qdrant Cloud
 > 3. **API 设计**：Qdrant 的 JS SDK 设计得更符合 TypeScript 开发习惯"
@@ -89,11 +90,12 @@ const reranked = await rerankWithLLM(query, results)
 
 > A: "Reranker 是为了解决向量检索的精度问题。向量检索是基于语义相似度，但有时候语义相近的内容并不一定是用户真正想要的。
 >
-> 我使用 qwen-plus 对检索结果进行重排序，让 LLM 判断每个结果与问题的相关程度。实测可以提升检索准确率 5-10 个百分点。"
+> 我使用 qwen3.5-plus 对检索结果进行重排序，让 LLM 判断每个结果与问题的相关程度。实测可以提升检索准确率 5-10 个百分点。"
 
 **Q: 知识库是怎么构建的？**
 
 > A: "知识库包含 130 条专家知识，覆盖 5 大分类：
+>
 > - 产品摄影技巧（角度、构图、焦距）
 > - 灯光设置（柔光、硬光、布光方案）
 > - 背景选择（纯色、场景、渐变）
@@ -136,13 +138,13 @@ const reranked = await rerankWithLLM(query, results)
 
 #### 工具编排
 
-| 工具 | 功能 | 输入 | 输出 |
-|------|------|------|------|
-| `analyze_product` | 商品分析 | imageUrl/description | ProductAnalysis |
-| `optimize_prompt` | 提示词优化 | ProductAnalysis | OptimizedPrompt |
-| `generate_3d` | 3D生成 | imageUrl/prompt | GenerationResult |
-| `quality_check` | 质量检查 | modelUrl, analysis | QualityCheckResult |
-| `export_model` | 模型导出 | modelUrl, format | ExportResult |
+| 工具              | 功能       | 输入                 | 输出               |
+| ----------------- | ---------- | -------------------- | ------------------ |
+| `analyze_product` | 商品分析   | imageUrl/description | ProductAnalysis    |
+| `optimize_prompt` | 提示词优化 | ProductAnalysis      | OptimizedPrompt    |
+| `generate_3d`     | 3D生成     | imageUrl/prompt      | GenerationResult   |
+| `quality_check`   | 质量检查   | modelUrl, analysis   | QualityCheckResult |
+| `export_model`    | 模型导出   | modelUrl, format     | ExportResult       |
 
 #### 工作流示例
 
@@ -173,6 +175,7 @@ Step 4: quality_check
 > A: "ReAct（Reason + Act）模式更接近人类的思考方式。
 >
 > 比如用户说'帮我生成一个女包 3D 展示'，系统会先推理：
+>
 > 1. 用户需要什么类型的包？（时尚款还是商务款？）
 > 2. 用什么风格展示？（简约还是奢华？）
 > 3. 需要什么平台？（小红书和淘宝风格完全不同）
@@ -184,6 +187,7 @@ Step 4: quality_check
 > A: "WorkflowEngine 的核心设计是 **StepInput 解析机制**。
 >
 > 每个步骤的输入可以是三种类型：
+>
 > 1. **静态值**：直接指定的参数
 > 2. **引用值**：引用前序步骤的输出（如 `{{step_1.category}}`）
 > 3. **模板值**：组合多个值生成（如 `商品类别: {{step_1.category}}`）
@@ -193,6 +197,7 @@ Step 4: quality_check
 **Q: Tracer 模块的作用？**
 
 > A: "Tracer 是为了面试展示和调试设计的。它记录：
+>
 > - 每个工具的调用时间、输入输出
 > - Token 消耗（用于成本核算）
 > - 执行路径（方便排查问题）
@@ -209,33 +214,33 @@ Step 4: quality_check
 
 #### 风格模板系统
 
-| 模板 | 适用场景 | 特点 |
-|------|---------|------|
-| `minimal` | 简约风格商品 | 干净背景、柔和光照 |
-| `luxury` | 奢侈品、高端商品 | 优雅、精致、戏剧光效 |
-| `tech` | 电子产品 | 未来感、金属质感 |
-| `natural` | 自然产品 | 自然光、环境融合 |
-| `trendy` | 潮流商品 | 动感、时尚 |
+| 模板      | 适用场景         | 特点                 |
+| --------- | ---------------- | -------------------- |
+| `minimal` | 简约风格商品     | 干净背景、柔和光照   |
+| `luxury`  | 奢侈品、高端商品 | 优雅、精致、戏剧光效 |
+| `tech`    | 电子产品         | 未来感、金属质感     |
+| `natural` | 自然产品         | 自然光、环境融合     |
+| `trendy`  | 潮流商品         | 动感、时尚           |
 
 #### 平台适配规则
 
-| 平台 | 风格特征 | 关键词 |
-|------|---------|--------|
+| 平台   | 风格特征       | 关键词             |
+| ------ | -------------- | ------------------ |
 | 小红书 | 生活化、氛围感 | 种草、精致、氛围感 |
-| 淘宝 | 专业、干净 | 商品展示、专业 |
-| 抖音 | 潮流、动感 | 吸睛、潮流 |
-| Amazon | 简洁、标准化 | 专业、标准化 |
+| 淘宝   | 专业、干净     | 商品展示、专业     |
+| 抖音   | 潮流、动感     | 吸睛、潮流         |
+| Amazon | 简洁、标准化   | 专业、标准化       |
 
 #### 评估指标体系
 
 ```typescript
 interface EvaluationMetrics {
-  overallScore: number        // 整体质量 (权重 1.0)
-  professionalismScore: number // 专业度 (权重 0.25)
-  detailScore: number          // 细节描述 (权重 0.20)
-  creativityScore: number      // 创意性 (权重 0.15)
-  ecommerceScore: number       // 电商适配度 (权重 0.20)
-  generationScore: number      // 3D生成友好度 (权重 0.20)
+  overallScore: number; // 整体质量 (权重 1.0)
+  professionalismScore: number; // 专业度 (权重 0.25)
+  detailScore: number; // 细节描述 (权重 0.20)
+  creativityScore: number; // 创意性 (权重 0.15)
+  ecommerceScore: number; // 电商适配度 (权重 0.20)
+  generationScore: number; // 3D生成友好度 (权重 0.20)
 }
 ```
 
@@ -245,7 +250,7 @@ interface EvaluationMetrics {
 
 > A: "我设计了一套完整的评估体系：
 >
-> 1. **LLM 评估**：使用 qwen-plus 对提示词进行多维度打分
+> 1. **LLM 评估**：使用 qwen3.5-plus 对提示词进行多维度打分
 > 2. **对比评估**：对比优化前后的提示词，计算提升百分比
 > 3. **批量评估**：在 20+ 样本上验证平均提升效果
 >
@@ -364,6 +369,7 @@ npm run dev
 **Q: 为什么选择 Next.js 而不是纯 React？**
 
 > A: "三个原因：
+>
 > 1. **全栈能力**：API Routes 可以直接写后端接口，一个项目搞定前后端
 > 2. **SEO 友好**：SSR/SSG 支持，虽然是内部工具但面试时可以展示这个能力
 > 3. **生态完善**：Vercel 部署、Supabase 集成都很方便"
@@ -371,6 +377,7 @@ npm run dev
 **Q: 项目如何部署？**
 
 > A: "开发环境用 Docker Compose，生产环境：
+>
 > - 前端部署到 Vercel Edge
 > - Qdrant 使用 Qdrant Cloud
 > - Supabase 使用云托管版本
@@ -382,6 +389,7 @@ npm run dev
 **Q: 如何评估 RAG 的效果？**
 
 > A: "我设计了三个评估维度：
+>
 > 1. **检索准确率**：人工标注测试集，计算 Top-5 准确率
 > 2. **用户满意度**：看返回结果是否符合预期
 > 3. **端到端效果**：看 RAG 生成的答案质量"
@@ -389,6 +397,7 @@ npm run dev
 **Q: Agent 的工具是如何定义的？**
 
 > A: "遵循 OpenAI Function Calling 格式：
+>
 > ```typescript
 > {
 >   type: 'function',
@@ -400,11 +409,13 @@ npm run dev
 >   handler: async (input) => { ... }  // 实际执行逻辑
 > }
 > ```
+>
 > 这样设计的好处是可以直接对接 OpenAI API 格式的 LLM。"
 
 **Q: Prompt 优化的商业价值是什么？**
 
 > A: "对于电商卖家来说：
+>
 > 1. **降低门槛**：不需要懂专业术语，用自然语言就能生成好的提示词
 > 2. **提升效率**：批量优化，省去反复调试的时间
 > 3. **提高转化率**：更好的展示效果意味着更高的点击率和转化率"
@@ -414,6 +425,7 @@ npm run dev
 **Q: Qdrant 和 pgvector 怎么选？**
 
 > A: "我选择 Qdrant 主要考虑：
+>
 > 1. **性能**：Qdrant 是专门的向量数据库，查询性能更好
 > 2. **功能**：支持过滤、分页、payload 等
 > 3. **开发体验**：JS SDK 和 TypeScript 支持完善
@@ -423,9 +435,10 @@ npm run dev
 **Q: Token 消耗如何控制？**
 
 > A: "几个策略：
+>
 > 1. **Prompt 压缩**：使用模板而非每次生成全新 prompt
 > 2. **缓存**：相同查询使用缓存结果
-> 3. **模型选择**：简单任务用 qwen-turbo，复杂任务用 qwen-plus
+> 3. **模型选择**：简单任务用 qwen-turbo，复杂任务用 qwen3.5-plus
 > 4. **批量处理**：合并多个小请求为一个大请求"
 
 ---
@@ -434,24 +447,24 @@ npm run dev
 
 ### 6.1 量化指标
 
-| 指标 | 目标 | 实际 |
-|------|------|------|
-| RAG 检索准确率 | > 85% | ✅ 达成 |
-| Agent 工作流成功率 | > 90% | ✅ 达成 |
-| Prompt 优化质量提升 | > 40% | ✅ 达成 |
-| 知识库条目数 | > 100 | ✅ 130条 |
-| API 端点数 | 10 | ✅ 10个 |
+| 指标                | 目标  | 实际     |
+| ------------------- | ----- | -------- |
+| RAG 检索准确率      | > 85% | ✅ 达成  |
+| Agent 工作流成功率  | > 90% | ✅ 达成  |
+| Prompt 优化质量提升 | > 40% | ✅ 达成  |
+| 知识库条目数        | > 100 | ✅ 130条 |
+| API 端点数          | 10    | ✅ 10个  |
 
 ### 6.2 技术能力展示
 
-| 能力 | 展示点 |
-|------|--------|
-| **前端架构** | Next.js 15 App Router、React 19、TypeScript 5 |
-| **3D 渲染** | Three.js + @react-three/fiber 3D 模型展示 |
-| **RAG 实现** | Qdrant 向量检索、Embedding、Reranker |
-| **Agent 设计** | ReAct 模式、工具编排、工作流引擎 |
-| **Prompt Engineering** | 模板系统、评估体系、批量优化 |
-| **后端开发** | Supabase、API 设计、错误处理 |
+| 能力                   | 展示点                                        |
+| ---------------------- | --------------------------------------------- |
+| **前端架构**           | Next.js 15 App Router、React 19、TypeScript 5 |
+| **3D 渲染**            | Three.js + @react-three/fiber 3D 模型展示     |
+| **RAG 实现**           | Qdrant 向量检索、Embedding、Reranker          |
+| **Agent 设计**         | ReAct 模式、工具编排、工作流引擎              |
+| **Prompt Engineering** | 模板系统、评估体系、批量优化                  |
+| **后端开发**           | Supabase、API 设计、错误处理                  |
 
 ### 6.3 商业价值
 

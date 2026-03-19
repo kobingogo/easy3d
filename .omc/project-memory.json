@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1773674868260,
+  "lastScanned": 1773884148047,
   "projectRoot": "/Users/bingo/.openclaw/workspace/projects/easy3d",
   "techStack": {
     "languages": [
@@ -55,7 +55,11 @@
       "start:all": "./scripts/start.sh",
       "stop:all": "./scripts/stop.sh",
       "status": "./scripts/status.sh",
-      "build:knowledge": "npx tsx scripts/build-knowledge.ts"
+      "build:knowledge": "npx tsx scripts/build-knowledge.ts",
+      "test:rag": "npx tsx scripts/rag-benchmark.ts",
+      "test:rag:verbose": "npx tsx scripts/rag-benchmark.ts --verbose",
+      "test:ragas": "npx tsx scripts/ragas-evaluate.ts",
+      "test:ragas:verbose": "npx tsx scripts/ragas-evaluate.ts --verbose"
     }
   },
   "conventions": {
@@ -72,7 +76,8 @@
       "components",
       "docs",
       "lib",
-      "scripts"
+      "scripts",
+      "tests"
     ],
     "gitBranches": null
   },
@@ -82,7 +87,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 3,
-      "lastAccessed": 1773674868234,
+      "lastAccessed": 1773884148020,
       "keyFiles": [
         "globals.css",
         "layout.tsx",
@@ -93,27 +98,27 @@
       "path": "components",
       "purpose": "UI components",
       "fileCount": 0,
-      "lastAccessed": 1773674868235,
+      "lastAccessed": 1773884148020,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 7,
-      "lastAccessed": 1773674868239,
+      "fileCount": 14,
+      "lastAccessed": 1773884148020,
       "keyFiles": [
         "ACCOUNT_SETUP_GUIDE.md",
         "AGENT_ARCHITECTURE_ANALYSIS.md",
-        "agent-tools-design.md",
-        "ai-design.md",
-        "architecture.md"
+        "DEV-BACKLOG.md",
+        "PRD-v3.0.md",
+        "agent-tools-design.md"
       ]
     },
     "lib": {
       "path": "lib",
       "purpose": "Library code",
       "fileCount": 1,
-      "lastAccessed": 1773674868239,
+      "lastAccessed": 1773884148020,
       "keyFiles": [
         "utils.ts"
       ]
@@ -122,7 +127,7 @@
       "path": "qdrant_storage",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1773674868239,
+      "lastAccessed": 1773884148023,
       "keyFiles": [
         "raft_state.json"
       ]
@@ -130,232 +135,197 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 14,
-      "lastAccessed": 1773674868240,
+      "fileCount": 17,
+      "lastAccessed": 1773884148023,
       "keyFiles": [
         "build-knowledge.ts",
         "fix-llm-output.ts",
         "knowledge-base.ts",
-        "start.sh",
-        "status.sh"
+        "rag-benchmark.ts",
+        "ragas-evaluate.ts"
       ]
     },
     "supabase": {
       "path": "supabase",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1773674868240,
+      "lastAccessed": 1773884148023,
       "keyFiles": [
         "models-table.sql",
         "storage-setup.sql"
       ]
     },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 0,
+      "lastAccessed": 1773884148023,
+      "keyFiles": []
+    },
     "app/api": {
       "path": "app/api",
       "purpose": "API routes",
       "fileCount": 0,
-      "lastAccessed": 1773674868240,
+      "lastAccessed": 1773884148024,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "README.md",
-      "accessCount": 47,
-      "lastAccessed": 1773711624367,
-      "type": "file"
-    },
-    {
-      "path": "lib/rag/qdrant.ts",
-      "accessCount": 18,
-      "lastAccessed": 1773739276676,
-      "type": "file"
-    },
-    {
-      "path": "lib/rag/embedding.ts",
-      "accessCount": 18,
-      "lastAccessed": 1773739297427,
-      "type": "file"
-    },
-    {
-      "path": "app/knowledge/page.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1773730589364,
-      "type": "file"
-    },
-    {
-      "path": "docs/PRD-v3.0.md",
-      "accessCount": 8,
-      "lastAccessed": 1773736575020,
-      "type": "file"
-    },
-    {
-      "path": "scripts/start.sh",
-      "accessCount": 7,
-      "lastAccessed": 1773729521249,
-      "type": "file"
-    },
-    {
-      "path": "docs/DEV-BACKLOG.md",
-      "accessCount": 7,
-      "lastAccessed": 1773735976270,
-      "type": "file"
-    },
-    {
-      "path": "lib/rag/search.ts",
-      "accessCount": 7,
-      "lastAccessed": 1773739276569,
-      "type": "file"
-    },
-    {
-      "path": "lib/rag/reranker.ts",
-      "accessCount": 7,
-      "lastAccessed": 1773739297533,
-      "type": "file"
-    },
-    {
-      "path": "app/api/knowledge/route.ts",
-      "accessCount": 6,
-      "lastAccessed": 1773739297480,
-      "type": "file"
-    },
-    {
-      "path": ".env.local",
-      "accessCount": 5,
-      "lastAccessed": 1773727294602,
-      "type": "file"
-    },
-    {
-      "path": ".claude/settings.json",
-      "accessCount": 4,
-      "lastAccessed": 1773737201910,
-      "type": "file"
-    },
-    {
-      "path": "app/api/evaluate/route.ts",
-      "accessCount": 2,
-      "lastAccessed": 1773700482142,
-      "type": "file"
-    },
-    {
-      "path": ".claude/settings.local.json",
-      "accessCount": 2,
-      "lastAccessed": 1773737954410,
-      "type": "file"
-    },
-    {
-      "path": "lib/rag/types.ts",
-      "accessCount": 2,
-      "lastAccessed": 1773739276519,
-      "type": "file"
-    },
-    {
-      "path": "scripts/test-rag.ts",
-      "accessCount": 2,
-      "lastAccessed": 1773739276620,
-      "type": "file"
-    },
-    {
       "path": "scripts/knowledge-base.ts",
-      "accessCount": 2,
-      "lastAccessed": 1773739576882,
+      "accessCount": 55,
+      "lastAccessed": 1773919113308,
       "type": "file"
     },
     {
-      "path": "app/api/generate/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773674885639,
+      "path": "app/api/agent/stream/route.ts",
+      "accessCount": 40,
+      "lastAccessed": 1773933758285,
+      "type": "file"
+    },
+    {
+      "path": "lib/agent/engine.ts",
+      "accessCount": 34,
+      "lastAccessed": 1773933687181,
       "type": "file"
     },
     {
       "path": "app/api/agent/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773674885742,
+      "accessCount": 29,
+      "lastAccessed": 1773933624440,
       "type": "file"
     },
     {
-      "path": "app/api/optimize/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773674885793,
+      "path": "lib/agent/workflow-store.ts",
+      "accessCount": 22,
+      "lastAccessed": 1773933568757,
       "type": "file"
     },
     {
-      "path": "app/api/proxy/model/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773675038601,
+      "path": "app/agent/page.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1773933624501,
       "type": "file"
     },
     {
-      "path": "app/api/upload/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773675038625,
+      "path": "lib/rag/search.ts",
+      "accessCount": 8,
+      "lastAccessed": 1773931769430,
       "type": "file"
     },
     {
-      "path": "app/api/models/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773675038652,
+      "path": "lib/rag/qdrant.ts",
+      "accessCount": 7,
+      "lastAccessed": 1773930499605,
       "type": "file"
     },
     {
-      "path": "app/api/tripo/status/[taskId]/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773675038677,
+      "path": "components/agent/thought-display.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773911380151,
       "type": "file"
     },
     {
-      "path": "app/api/batch-evaluate/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773675038732,
+      "path": "lib/rag/query-rewriter.ts",
+      "accessCount": 4,
+      "lastAccessed": 1773931653009,
       "type": "file"
     },
     {
-      "path": "docs/api.md",
-      "accessCount": 1,
-      "lastAccessed": 1773675223341,
+      "path": "lib/rag/types.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773919394474,
       "type": "file"
     },
     {
-      "path": "docs/interview-guide.md",
-      "accessCount": 1,
-      "lastAccessed": 1773675469391,
+      "path": "lib/rag/reranker.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773931596362,
       "type": "file"
     },
     {
-      "path": "TASKS.md",
-      "accessCount": 1,
-      "lastAccessed": 1773686505480,
+      "path": "lib/agent/workflow-storage.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773933568807,
       "type": "file"
     },
     {
-      "path": "lib/fine-tune/prompt-optimizer.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773700482197,
+      "path": "lib/agent/tracer.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773911371139,
       "type": "file"
     },
     {
-      "path": "lib/fine-tune/evaluate.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773700482256,
+      "path": "lib/agent/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773911380044,
       "type": "file"
     },
     {
-      "path": ".env.local.example",
+      "path": "scripts/test-query-rewriter.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773919785870,
+      "type": "file"
+    },
+    {
+      "path": "scripts/rag-benchmark.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773930487236,
+      "type": "file"
+    },
+    {
+      "path": "app/api/agent/replay/[id]/route.ts",
       "accessCount": 1,
-      "lastAccessed": 1773716119690,
+      "lastAccessed": 1773901468013,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag",
+      "accessCount": 1,
+      "lastAccessed": 1773915558904,
+      "type": "directory"
+    },
+    {
+      "path": "docs/rag-benchmark-report.md",
+      "accessCount": 1,
+      "lastAccessed": 1773915945992,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1773919454344,
+      "type": "file"
+    },
+    {
+      "path": "scripts/test-search-with-rewrite.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773919807763,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/embedding.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773919829087,
       "type": "file"
     },
     {
       "path": "",
       "accessCount": 1,
-      "lastAccessed": 1773723305239,
+      "lastAccessed": 1773920094928,
       "type": "directory"
     },
     {
-      "path": "lib/rag",
+      "path": "scripts/update-benchmark-dataset.ts",
       "accessCount": 1,
-      "lastAccessed": 1773730852252,
-      "type": "directory"
+      "lastAccessed": 1773930924686,
+      "type": "file"
+    },
+    {
+      "path": "lib/rag/cache.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773931701900,
+      "type": "file"
     }
   ],
   "userDirectives": []

@@ -1,0 +1,540 @@
+{
+  "version": "2.0",
+  "created_at": "2026-03-19",
+  "description": "RAG benchmark test dataset for easy3d knowledge base evaluation",
+  "total_cases": 55,
+  "test_cases": [
+    {
+      "id": "tc-001",
+      "query": "口红怎么展示效果好？",
+      "expected_knowledge_ids": [
+        "prod-001"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-002",
+      "query": "化妆品拍摄要注意什么？",
+      "expected_knowledge_ids": [
+        "prod-001",
+        "prod-002"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-003",
+      "query": "护肤品瓶子的材质怎么表现？",
+      "expected_knowledge_ids": [
+        "prod-002"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-004",
+      "query": "香水产品3D展示有什么技巧？",
+      "expected_knowledge_ids": [
+        "prod-003"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-005",
+      "query": "手机产品渲染用什么场景？",
+      "expected_knowledge_ids": [
+        "scene-023",
+        "scene-021"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-006",
+      "query": "耳机展示用什么背景合适？",
+      "expected_knowledge_ids": [
+        "prod-012",
+        "prod-080"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-007",
+      "query": "智能手表怎么渲染才有科技感？",
+      "expected_knowledge_ids": [
+        "prod-079",
+        "light-093"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-008",
+      "query": "包包展示用什么光照？",
+      "expected_knowledge_ids": [
+        "light-038",
+        "light-005"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-009",
+      "query": "皮具产品怎么表现质感？",
+      "expected_knowledge_ids": [
+        "light-008",
+        "prod-051"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-010",
+      "query": "鞋子展示需要哪些角度？",
+      "expected_knowledge_ids": [
+        "prod-009"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-011",
+      "query": "运动鞋3D模型要注意什么细节？",
+      "expected_knowledge_ids": [
+        "prod-009",
+        "prod-010"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-012",
+      "query": "服装展示怎么打光？",
+      "expected_knowledge_ids": [
+        "light-034",
+        "light-096"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-013",
+      "query": "珠宝首饰渲染有什么技巧？",
+      "expected_knowledge_ids": [
+        "light-097",
+        "light-032"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-014",
+      "query": "钻石珠宝怎么表现光泽？",
+      "expected_knowledge_ids": [
+        "light-097",
+        "light-032"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-015",
+      "query": "眼镜展示用什么背景？",
+      "expected_knowledge_ids": [
+        "scene-005",
+        "prod-041b"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-016",
+      "query": "食品零食怎么展示更有食欲？",
+      "expected_knowledge_ids": [
+        "prod-026",
+        "light-035"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-017",
+      "query": "饮料瓶身怎么渲染？",
+      "expected_knowledge_ids": [
+        "prod-073b",
+        "prod-031"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-018",
+      "query": "酒类产品展示有什么规范？",
+      "expected_knowledge_ids": [
+        "prod-073a",
+        "prod-073b"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-019",
+      "query": "家居用品展示场景？",
+      "expected_knowledge_ids": [
+        "scene-016",
+        "scene-017"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-020",
+      "query": "家具渲染用什么灯光？",
+      "expected_knowledge_ids": [
+        "light-098",
+        "light-061"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-021",
+      "query": "纯色背景怎么设置？",
+      "expected_knowledge_ids": [
+        "scene-001"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-022",
+      "query": "渐变背景适合什么产品？",
+      "expected_knowledge_ids": [
+        "scene-002"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-023",
+      "query": "高级感场景怎么设计？",
+      "expected_knowledge_ids": [
+        "scene-003"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-024",
+      "query": "极简风格场景有什么特点？",
+      "expected_knowledge_ids": [
+        "style-001",
+        "style-080"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-025",
+      "query": "科技感场景用什么元素？",
+      "expected_knowledge_ids": [
+        "scene-068",
+        "style-009"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-026",
+      "query": "自然风格的场景设计？",
+      "expected_knowledge_ids": [
+        "scene-015",
+        "scene-048"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-027",
+      "query": "奢华高端场景怎么设计？",
+      "expected_knowledge_ids": [
+        "scene-067",
+        "style-005"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-028",
+      "query": "女性产品场景配色？",
+      "expected_knowledge_ids": [
+        "scene-035",
+        "scene-029a"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-029",
+      "query": "男性产品场景设计？",
+      "expected_knowledge_ids": [
+        "style-022",
+        "prod-007"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-030",
+      "query": "运动活力场景怎么设计？",
+      "expected_knowledge_ids": [
+        "style-018",
+        "scene-058"
+      ],
+      "expected_category": "scene_design",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-031",
+      "query": "主光源怎么设置？",
+      "expected_knowledge_ids": [
+        "light-087",
+        "light-098"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-032",
+      "query": "补光灯怎么用？",
+      "expected_knowledge_ids": [
+        "light-028",
+        "light-005"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-033",
+      "query": "轮廓光怎么打？",
+      "expected_knowledge_ids": [
+        "light-022",
+        "light-074"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-034",
+      "query": "柔光箱怎么设置？",
+      "expected_knowledge_ids": [
+        "light-009",
+        "light-002"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-035",
+      "query": "硬光适合什么产品？",
+      "expected_knowledge_ids": [
+        "light-005"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-036",
+      "query": "三点布光法怎么设置？",
+      "expected_knowledge_ids": [
+        "light-001",
+        "light-009"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-037",
+      "query": "环境光怎么调节？",
+      "expected_knowledge_ids": [
+        "light-098",
+        "light-014"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-038",
+      "query": "HDR光照怎么用？",
+      "expected_knowledge_ids": [
+        "light-005",
+        "light-086"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-039",
+      "query": "反光板怎么使用？",
+      "expected_knowledge_ids": [
+        "light-028",
+        "light-084"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-040",
+      "query": "阴影怎么控制？",
+      "expected_knowledge_ids": [
+        "light-084",
+        "light-009"
+      ],
+      "expected_category": "lighting",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-041",
+      "query": "小红书图片尺寸是多少？",
+      "expected_knowledge_ids": [
+        "platform-005"
+      ],
+      "expected_category": "platform_spec",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-042",
+      "query": "抖音视频格式要求？",
+      "expected_knowledge_ids": [
+        "platform-003"
+      ],
+      "expected_category": "platform_spec",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-043",
+      "query": "淘宝详情页3D模型要求？",
+      "expected_knowledge_ids": [
+        "platform-002"
+      ],
+      "expected_category": "platform_spec",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-044",
+      "query": "天猫商品展示规范？",
+      "expected_knowledge_ids": [
+        "platform-025",
+        "platform-026"
+      ],
+      "expected_category": "platform_spec",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-045",
+      "query": "京东3D展示有什么要求？",
+      "expected_knowledge_ids": [
+        "platform-013",
+        "platform-014"
+      ],
+      "expected_category": "platform_spec",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-046",
+      "query": "ins风格模板特点？",
+      "expected_knowledge_ids": [
+        "style-023"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-047",
+      "query": "日系风格怎么调？",
+      "expected_knowledge_ids": [
+        "style-035"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-048",
+      "query": "欧美风渲染特点？",
+      "expected_knowledge_ids": [
+        "style-036"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-049",
+      "query": "中国风场景元素？",
+      "expected_knowledge_ids": [
+        "style-024"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-050",
+      "query": "复古风格怎么表现？",
+      "expected_knowledge_ids": [
+        "style-027"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc-051",
+      "query": "北欧风格场景设计？",
+      "expected_knowledge_ids": [
+        "style-002"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-052",
+      "query": "工业风格元素有哪些？",
+      "expected_knowledge_ids": [
+        "style-004",
+        "style-022"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-053",
+      "query": "波西米亚风格特点？",
+      "expected_knowledge_ids": [
+        "style-037"
+      ],
+      "expected_category": "style_template",
+      "difficulty": "easy"
+    },
+    {
+      "id": "tc-054",
+      "query": "化妆品在淘宝发布有什么要求？",
+      "expected_knowledge_ids": [
+        "prod-001",
+        "platform-003"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "hard"
+    },
+    {
+      "id": "tc-055",
+      "query": "珠宝展示要注意光照和平台规范吗？",
+      "expected_knowledge_ids": [
+        "light-010",
+        "light-097"
+      ],
+      "expected_category": "product_category",
+      "difficulty": "hard"
+    }
+  ]
+}

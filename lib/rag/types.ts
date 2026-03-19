@@ -35,6 +35,8 @@ export interface SearchOptions {
   limit?: number
   threshold?: number
   enableRerank?: boolean     // 是否启用重排序
+  enableRewrite?: boolean    // 是否启用查询改写（默认 true）
+  rewriteMode?: 'llm' | 'quick'  // 改写模式：llm=精确但慢，quick=快速但简单
 }
 
 export interface RerankResult {

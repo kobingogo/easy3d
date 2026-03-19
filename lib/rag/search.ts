@@ -7,29 +7,30 @@ import OpenAI from 'openai'
 import { embedding } from './embedding'
 import { vectorSearch } from './qdrant'
 import { rerankSearchResults } from './reranker'
+import { rewriteQuery, quickRewrite } from './query-rewriter'
+import { getCachedResults, setCachedResults } from './cache'
 import type { KnowledgeCategory, SearchResult, SearchOptions } from './types'
 
-// Lazy initialization - client created on first use, not at module load time
+// Lazy initialization - clients created on first use, not at module load time
 // This ensures env vars are loaded before client creation
 let _client: OpenAI | null = null
 
 /**
  * Get or create the LLM client (lazy initialization)
- * Uses DashScope V1 API for qwen-plus access
+ * Uses Coding Plan for qwen3.5-plus (cheaper, faster)
  */
 function getClient(): OpenAI {
   if (_client) {
     return _client
   }
 
-  // Prefer V1 API (has qwen-plus access), fallback to Coding Plan
+  // Coding Plan has qwen3.5-plus access
   _client = new OpenAI({
-    apiKey: process.env.DASHSCOPE_API_KEY_V1 || process.env.DASHSCOPE_API_KEY,
-    baseURL: process.env.DASHSCOPE_BASE_URL_V1 || process.env.DASHSCOPE_BASE_URL
+    apiKey: process.env.DASHSCOPE_API_KEY,
+    baseURL: process.env.DASHSCOPE_BASE_URL // Coding Plan
   })
 
-  const provider = process.env.DASHSCOPE_API_KEY_V1 ? 'DashScope V1' : 'DashScope Coding Plan'
-  console.log(`[Search] LLM client initialized with ${provider}`)
+  console.log(`[Search] LLM client initialized with DashScope Coding Plan`)
 
   return _client
 }
@@ -46,38 +47,60 @@ export async function searchKnowledge(
     limit = 5,
     threshold = 0.5,  // Lowered from 0.7 to account for semantic similarity variation in Chinese text
     enableRerank = true,
+    enableRewrite = true,
+    rewriteMode = 'quick',
     ...filterOptions
   } = options
 
+  // 0. 检查缓存
+  const cached = getCachedResults(query, options)
+  if (cached) {
+    return cached
+  }
+
   const startTime = Date.now()
+  let searchQuery = query
 
-  // 1. 向量化查询
-  const queryVector = await embedding(query)
+  // 1. 查询改写（可选，提升召回率）
+  if (enableRewrite) {
+    const rewriteResult = rewriteMode === 'llm'
+      ? await rewriteQuery(query, { useLLM: true, maxRewrites: 3 })
+      : quickRewrite(query)
 
-  // 2. 向量检索（召回更多候选用于重排序）
+    searchQuery = rewriteResult.expandedQuery
+    console.log(`[RAG] Query rewritten: "${query}" → "${searchQuery}" (${rewriteResult.rewrites.length} variants)`)
+  }
+
+  // 2. 向量化查询（使用改写后的查询）
+  const queryVector = await embedding(searchQuery)
+
+  // 3. 向量检索（召回更多候选用于重排序）
   const candidates = await vectorSearch(queryVector, {
     limit: enableRerank ? limit * 3 : limit,
     threshold,
     ...filterOptions
   })
 
-  // 3. 重排序（可选）
+  // 4. 重排序（可选，使用原始查询）
+  let results: SearchResult[]
   if (enableRerank && candidates.length > limit) {
-    const reranked = await rerankSearchResults(query, candidates, limit)
-    console.log(`[RAG] Search "${query}" took ${Date.now() - startTime}ms, found ${reranked.length} results with rerank`)
-    return reranked
+    results = await rerankSearchResults(query, candidates, limit)
+    console.log(`[RAG] Search "${query}" took ${Date.now() - startTime}ms, found ${results.length} results with rerank`)
+  } else {
+    // 规则重排（priority 加权）
+    results = candidates
+      .map(r => ({
+        ...r,
+        score: r.score * (1 + (r.entry.priority - 3) * 0.1)  // priority 1-5
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+
+    console.log(`[RAG] Search "${query}" took ${Date.now() - startTime}ms, found ${results.length} results`)
   }
 
-  // 4. 规则重排（priority 加权）
-  const results = candidates
-    .map(r => ({
-      ...r,
-      score: r.score * (1 + (r.entry.priority - 3) * 0.1)  // priority 1-5
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-
-  console.log(`[RAG] Search "${query}" took ${Date.now() - startTime}ms, found ${results.length} results`)
+  // 5. 缓存结果
+  setCachedResults(query, options, results)
 
   return results
 }
@@ -104,7 +127,7 @@ export async function suggestDisplay(
   // 2. LLM 生成
   const client = getClient()
   const response = await client.chat.completions.create({
-    model: 'qwen-plus',
+    model: 'qwen3.5-plus',
     messages: [{
       role: 'user',
       content: `你是一个电商3D展示专家。基于以下专业知识，为商品推荐3D展示方案。
@@ -150,7 +173,7 @@ export async function askKnowledge(
   // 2. LLM 生成答案
   const client = getClient()
   const response = await client.chat.completions.create({
-    model: 'qwen-plus',
+    model: 'qwen3.5-plus',
     messages: [{
       role: 'user',
       content: `你是一个电商3D展示知识库助手。基于以下参考资料回答问题。

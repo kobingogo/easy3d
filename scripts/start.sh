@@ -64,7 +64,7 @@ check_env() {
     fi
 
     echo -e "${GREEN}✓ 环境配置检查通过${NC}"
-    echo -e "  - DashScope V1 API (embedding + qwen-plus)"
+    echo -e "  - DashScope V1 API (embedding + qwen3.5-plus)"
     echo -e "  - Qdrant Cloud (向量数据库)"
     echo ""
 }

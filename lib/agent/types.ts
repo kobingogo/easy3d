@@ -64,6 +64,16 @@ export interface ToolError {
 
 // ==================== 执行追踪 ====================
 
+/**
+ * 思维链记录（ReAct 模式）
+ */
+export interface Thought {
+  id: string
+  type: 'reasoning' | 'action' | 'observation'
+  content: string
+  timestamp: number
+}
+
 export interface ExecutionTrace {
   workflowId: string
   status: WorkflowStatus
@@ -90,6 +100,7 @@ export interface StepTrace {
   duration?: number
   tokensUsed?: number
   cost?: number
+  thoughts: Thought[]  // 思维链记录
 }
 
 // ==================== 工作流定义 ====================
@@ -253,5 +264,6 @@ export interface VisualizationData {
     duration: number
     tokens: number
     cost: string
+    thoughts: Thought[]  // 思维链记录
   }>
 }

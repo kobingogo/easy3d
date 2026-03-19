@@ -466,7 +466,7 @@ export default function FineTunePage() {
               <CardContent>
                 {!result ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    请先在"提示词优化"页面生成提示词
+                    请先在&ldquo;提示词优化&rdquo;页面生成提示词
                   </div>
                 ) : (
                   <>
