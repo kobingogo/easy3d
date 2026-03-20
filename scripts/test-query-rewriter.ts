@@ -4,8 +4,20 @@
 
 const { quickRewrite } = require('../lib/rag/query-rewriter.ts');
 
+interface RewriteResult {
+  type: string;
+  rewritten: string;
+  confidence: number;
+}
+
+interface QueryRewriteOutput {
+  original: string;
+  rewrites: RewriteResult[];
+  expandedQuery: string;
+}
+
 // 测试用例
-const testCases = [
+const testCases: string[] = [
   '高端女包怎么展示',
   '化妆品拍摄灯光设置',
   '手机3D展示背景选择',
@@ -15,10 +27,10 @@ const testCases = [
 console.log('=== Query Rewriter 测试 ===\n');
 
 testCases.forEach(query => {
-  const result = quickRewrite(query);
+  const result: QueryRewriteOutput = quickRewrite(query);
   console.log(`原查询: "${result.original}"`);
   console.log(`改写结果:`);
-  result.rewrites.forEach((r, i) => {
+  result.rewrites.forEach((r: RewriteResult, i: number) => {
     console.log(`  [${i+1}] ${r.type}: "${r.rewritten}" (置信度: ${r.confidence})`);
   });
   console.log(`扩展查询: "${result.expandedQuery}"`);

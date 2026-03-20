@@ -4,10 +4,18 @@
 
 const { searchKnowledge } = require('../lib/rag/search.ts');
 
+interface SearchResult {
+  score: number;
+  entry: {
+    category: string;
+    text: string;
+  };
+}
+
 async function main() {
   console.log('=== RAG 搜索集成测试 ===\n');
 
-  const testQueries = [
+  const testQueries: string[] = [
     '高端女包展示',
     '化妆品灯光设置'
   ];
@@ -18,7 +26,7 @@ async function main() {
 
     // 测试启用查询改写（默认 quick 模式）
     const startTime = Date.now();
-    const results = await searchKnowledge(query, {
+    const results: SearchResult[] = await searchKnowledge(query, {
       limit: 3,
       enableRewrite: true,
       rewriteMode: 'quick',
@@ -27,7 +35,7 @@ async function main() {
     const latency = Date.now() - startTime;
 
     console.log(`找到 ${results.length} 条结果 (${latency}ms)`);
-    results.forEach((r, i) => {
+    results.forEach((r: SearchResult, i: number) => {
       console.log(`  [${i+1}] ${(r.score * 100).toFixed(1)}% - ${r.entry.category} - ${r.entry.text.slice(0, 80)}...`);
     });
   }

@@ -8,6 +8,7 @@ import { optimizePromptTool } from './optimize-prompt'
 import { generate3DTool } from './generate-3d'
 import { qualityCheckTool } from './quality-check'
 import { exportModelTool } from './export-model'
+import { generateCopyTool } from './generate-copy'
 
 /**
  * 工具注册表
@@ -17,7 +18,8 @@ export const toolRegistry: Map<string, Tool<any, any>> = new Map([
   ['optimize_prompt', optimizePromptTool as Tool<any, any>],
   ['generate_3d', generate3DTool as Tool<any, any>],
   ['quality_check', qualityCheckTool as Tool<any, any>],
-  ['export_model', exportModelTool as Tool<any, any>]
+  ['export_model', exportModelTool as Tool<any, any>],
+  ['generate_copy', generateCopyTool as Tool<any, any>]
 ])
 
 /**
@@ -50,5 +52,6 @@ export {
   optimizePromptTool,
   generate3DTool,
   qualityCheckTool,
-  exportModelTool
+  exportModelTool,
+  generateCopyTool
 }

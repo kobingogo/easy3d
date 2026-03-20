@@ -35,7 +35,7 @@ export interface SerializableWorkflowStatus {
 
 // SSE 事件
 export interface SSEEvent {
-  type: 'thought' | 'step_start' | 'step_end' | 'workflow_complete' | 'workflow_failed'
+  type: 'thought' | 'step_start' | 'step_end' | 'workflow_complete' | 'workflow_failed' | 'status'
   workflowId: string
   timestamp: number
   data: any
