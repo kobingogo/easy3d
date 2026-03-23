@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createTask, pollTaskStatus, downloadModel, type TripoTaskType, type TripoConfig } from '@/lib/tripo'
+import { createTask, pollTaskStatus, type TripoTaskType, type TripoConfig } from '@/lib/tripo'
 import { vision, generate } from '@/lib/agent/llm'
+import { createClient } from '@/lib/supabase/server'
+import {
+  buildPhase1ModelMetadata,
+  type Phase1ModelMetadata,
+  type Phase1UploadMode,
+} from '@/lib/seller-workflow/model-metadata'
+import type { Phase1Category } from '@/lib/seller-workflow/types'
+import { getPhase1Preset, isPhase1CategorySupported } from '@/lib/seller-workflow/presets'
 
 /**
  * 智能 3D 模型生成 API
@@ -128,6 +136,80 @@ interface OptimizedPrompt {
   confidence: number
 }
 
+interface BuildInitialPhase1MetadataInput {
+  uploadMode: Phase1UploadMode
+  analysis: Pick<ProductAnalysis, 'category' | 'subcategory' | 'materials' | 'keyFeatures'>
+}
+
+interface GenerateSmartSuccessResponseInput {
+  modelId: string
+  taskId: string
+  taskType: TripoTaskType
+  analysis: {
+    category: string
+    subcategory: string
+    keyFeatures: string[]
+    generationFocus: string[]
+  }
+  optimizedPrompt: string
+  structuralHints: string[]
+  durationMs: number
+}
+
+type Phase1TaskCreationFailureMetadata = Phase1ModelMetadata & {
+  errorStage: 'task_creation'
+  errorMessage?: string
+}
+
+function resolvePhase1Category(category: string): Phase1Category {
+  return isPhase1CategorySupported(category) ? category : 'bags'
+}
+
+function buildInitialPhase1Metadata(
+  input: BuildInitialPhase1MetadataInput
+): Phase1ModelMetadata {
+  const category = resolvePhase1Category(input.analysis.category)
+  const preset = getPhase1Preset(category)
+
+  return buildPhase1ModelMetadata({
+    category,
+    presetKey: preset.key,
+    uploadMode: input.uploadMode,
+    analysisSummary: {
+      subcategory: input.analysis.subcategory,
+      materials: input.analysis.materials,
+      keyFeatures: input.analysis.keyFeatures,
+    },
+  })
+}
+
+function buildTaskCreationFailedMetadata(
+  metadata: Phase1ModelMetadata,
+  errorMessage?: string
+): Phase1TaskCreationFailureMetadata {
+  return {
+    ...metadata,
+    errorStage: 'task_creation',
+    ...(errorMessage ? { errorMessage } : {}),
+  }
+}
+
+function buildGenerateSmartSuccessResponse(
+  input: GenerateSmartSuccessResponseInput
+) {
+  return {
+    success: true,
+    modelId: input.modelId,
+    taskId: input.taskId,
+    taskType: input.taskType,
+    analysis: input.analysis,
+    optimizedPrompt: input.optimizedPrompt,
+    structuralHints: input.structuralHints,
+    estimatedTime: input.taskType === 'multiview_to_model' ? 70 : 50,
+    duration: input.durationMs,
+  }
+}
+
 async function optimizePrompt(analysis: ProductAnalysis): Promise<OptimizedPrompt> {
   console.log('[generate-smart] Optimizing prompt...')
 
@@ -229,6 +311,39 @@ export async function POST(request: NextRequest) {
     }
     console.log(`[generate-smart] Optimized prompt:`, optimized.prompt.slice(0, 200))
 
+    const supabase = await createClient()
+    const uploadMode: Phase1UploadMode = isMultiview ? 'multiview' : 'single'
+    const initialMetadata = buildInitialPhase1Metadata({
+      uploadMode,
+      analysis: {
+        category: analysis.category,
+        subcategory: analysis.subcategory,
+        materials: analysis.materials,
+        keyFeatures: analysis.keyFeatures,
+      },
+    })
+
+    const { data: modelRecord, error: createModelError } = await supabase
+      .from('models')
+      .insert({
+        original_image_url: mainImageUrl,
+        status: 'pending',
+        quality: 'hd',
+        metadata: initialMetadata,
+      })
+      .select('id')
+      .single()
+
+    if (createModelError || !modelRecord) {
+      console.error('[generate-smart] Failed to create model record:', createModelError)
+      return NextResponse.json(
+        { error: 'Failed to create model record' },
+        { status: 500 }
+      )
+    }
+
+    const modelId = modelRecord.id
+
     // ==================== Step 3: 调用 Tripo API ====================
 
     // 构建 P1 优化配置
@@ -247,27 +362,53 @@ export async function POST(request: NextRequest) {
     console.log('[generate-smart] Tripo config:', JSON.stringify(tripoConfig))
 
     // 调用 Tripo API
-    const taskResponse = await createTask(
-      isMultiview
-        ? {
-            type: 'multiview_to_model',
-            images: images!.map((img: { url: string; file_token?: string; type?: string }) => ({
-              url: img.url,
-              file_token: img.file_token,
-              type: img.type || 'jpg',
-            })),
-            prompt: optimized.prompt,
-            config: tripoConfig,
-          }
-        : {
-            type: 'image_to_model',
-            imageUrl: mainImageUrl,
-            prompt: optimized.prompt,
-            config: tripoConfig,
-          }
-    )
+    let taskResponse
+    try {
+      taskResponse = await createTask(
+        isMultiview
+          ? {
+              type: 'multiview_to_model',
+              images: images!.map((img: { url: string; file_token?: string; type?: string }) => ({
+                url: img.url,
+                file_token: img.file_token,
+                type: img.type || 'jpg',
+              })),
+              prompt: optimized.prompt,
+              config: tripoConfig,
+            }
+          : {
+              type: 'image_to_model',
+              imageUrl: mainImageUrl,
+              prompt: optimized.prompt,
+              config: tripoConfig,
+            }
+      )
+    } catch (taskCreationError) {
+      const errorMessage =
+        taskCreationError instanceof Error
+          ? taskCreationError.message
+          : 'Tripo task creation failed'
+
+      await supabase
+        .from('models')
+        .update({
+          status: 'failed',
+          metadata: buildTaskCreationFailedMetadata(initialMetadata, errorMessage),
+        })
+        .eq('id', modelId)
+
+      return NextResponse.json({ error: errorMessage }, { status: 500 })
+    }
 
     if (taskResponse.code !== 0) {
+      await supabase
+        .from('models')
+        .update({
+          status: 'failed',
+          metadata: buildTaskCreationFailedMetadata(initialMetadata, taskResponse.msg),
+        })
+        .eq('id', modelId)
+
       return NextResponse.json(
         { error: taskResponse.msg || 'Tripo API error' },
         { status: 500 }
@@ -276,6 +417,14 @@ export async function POST(request: NextRequest) {
 
     const taskId = taskResponse.data.task_id
     console.log(`[generate-smart] Task created: ${taskId}`)
+
+    await supabase
+      .from('models')
+      .update({
+        trip_task_id: taskId,
+        status: 'processing',
+      })
+      .eq('id', modelId)
 
     // 异步轮询状态（不等待）
     pollTaskStatus(taskId, {
@@ -289,22 +438,22 @@ export async function POST(request: NextRequest) {
     })
 
     // 返回结果
-    return NextResponse.json({
-      success: true,
-      taskId,
-      taskType,
-      // 返回分析和优化结果，方便调试
-      analysis: {
-        category: analysis.category,
-        subcategory: analysis.subcategory,
-        keyFeatures: analysis.keyFeatures,
-        generationFocus: analysis.generationFocus,
-      },
-      optimizedPrompt: optimized.prompt,
-      structuralHints: optimized.structuralHints,
-      estimatedTime: taskType === 'multiview_to_model' ? 70 : 50,
-      duration: Date.now() - startTime,
-    })
+    return NextResponse.json(
+      buildGenerateSmartSuccessResponse({
+        modelId,
+        taskId,
+        taskType,
+        analysis: {
+          category: analysis.category,
+          subcategory: analysis.subcategory,
+          keyFeatures: analysis.keyFeatures,
+          generationFocus: analysis.generationFocus,
+        },
+        optimizedPrompt: optimized.prompt,
+        structuralHints: optimized.structuralHints,
+        durationMs: Date.now() - startTime,
+      })
+    )
   } catch (error: any) {
     console.error('[generate-smart] Error:', error)
     console.error('[generate-smart] Stack:', error.stack)
@@ -313,4 +462,18 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+;(POST as typeof POST & {
+  __testables?: {
+    resolvePhase1Category: typeof resolvePhase1Category
+    buildInitialPhase1Metadata: typeof buildInitialPhase1Metadata
+    buildTaskCreationFailedMetadata: typeof buildTaskCreationFailedMetadata
+    buildGenerateSmartSuccessResponse: typeof buildGenerateSmartSuccessResponse
+  }
+}).__testables = {
+  resolvePhase1Category,
+  buildInitialPhase1Metadata,
+  buildTaskCreationFailedMetadata,
+  buildGenerateSmartSuccessResponse,
 }
