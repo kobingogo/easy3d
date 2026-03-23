@@ -6,9 +6,9 @@
 
 ## 1. Goal
 
-Reposition `easy3d` from an AI capability showcase into an AI+3D product workflow tool for small and medium ecommerce sellers, with commercial validation as the primary goal and portfolio value as a strong secondary goal.
+Reposition `easy3d` from an AI capability showcase into a narrowly scoped workflow product for small and medium ecommerce sellers, with commercial validation as the primary goal and portfolio value as a strong secondary goal.
 
-The product should stay aligned with Tripo's core 3D generation experience while building 1-3 differentiated capabilities that are more useful for real seller workflows than a generic 3D generation API wrapper.
+The new direction should avoid competing head-on as a generic AI 3D platform. Instead, it should stay aligned with Tripo's core generation experience while focusing on the seller workflow around repeated asset production.
 
 ## 2. Product Direction
 
@@ -24,13 +24,25 @@ The next 2-3 months should prioritize:
 
 `easy3d` should be positioned as:
 
-> An AI 3D asset workflow tool for ecommerce sellers that helps them turn product photos into platform-ready marketing assets faster than traditional photo/design workflows.
+> An AI product asset production workbench for ecommerce sellers that helps them turn product photos into platform-ready asset packs faster than traditional photo/design workflows.
 
 This is intentionally different from:
 
 - A generic "AI 3D generation playground"
 - A pure "frontend AI demo"
 - A heavy professional 3D editing tool
+
+### 2.3 Repositioning statement
+
+The product should no longer lead with:
+
+> "AI+3D product generation platform"
+
+It should instead lead with:
+
+> "A workflow tool for producing multi-platform product asset packs for small sellers"
+
+AI and 3D remain enabling technology, but they should not be the headline category in the market-facing narrative.
 
 ## 3. Current State Assessment
 
@@ -114,6 +126,20 @@ The product should focus on these jobs:
 3. Reuse brand-consistent presentation styles across product batches
 4. Generate supporting copy and packaging for content publishing
 
+### 4.3 Narrow wedge
+
+The initial wedge should be:
+
+1. Small sellers or small studios
+2. Repeated product listing and content production
+3. Need for "good enough, fast, reusable, multi-platform" output
+
+The product is not initially optimized for:
+
+1. Enterprise asset management
+2. Advanced 3D editing professionals
+3. Generic creator experimentation
+
 ## 5. Category Focus Strategy
 
 ### 5.1 Early category selection principle
@@ -122,7 +148,27 @@ Early product-market validation should focus on categories that are more likely 
 
 ### 5.2 Recommended early categories
 
-Recommended first-wave categories:
+Launch priority:
+
+1. Phase 1 primary category:
+   - Bags and small leather goods
+2. Phase 1.5 or Phase 2 secondary category:
+   - Shoes and sneakers
+3. Later expansion categories:
+   - Beauty packaging
+   - 3C accessories
+   - Small home/lifestyle objects
+
+Phase 1 validation scope is limited to bags and small leather goods only. Shoes and sneakers are the next planned expansion, but they are not part of the first validation slice.
+
+Rationale for primary launch category:
+
+1. Bags and small leather goods have strong silhouette stability
+2. Premium texture is relatively easy to emphasize
+3. They fit both ecommerce listing and Xiaohongshu content scenarios
+4. They are more forgiving than soft apparel while still visually aspirational
+
+Recommended first-wave categories beyond the primary wedge:
 
 1. Bags and small leather goods
    - Strong silhouette
@@ -188,6 +234,16 @@ Recommended differentiated capabilities:
 2. Ecommerce platform asset pack output
 3. AI display strategy guidance
 
+### 6.3 Direct competitive lane to avoid
+
+The product should avoid competing primarily as:
+
+1. A generic text/image-to-3D platform
+2. A broad AI product photography studio
+3. A full publishing platform
+
+Those lanes are either too crowded, too infrastructure-heavy, or too dependent on downstream integrations for an early-stage product.
+
 ## 7. Differentiated Capabilities
 
 ### 7.1 Capability 1: Brand consistency templates
@@ -206,6 +262,14 @@ User value:
 - Faster repeatable production
 - Better brand consistency
 - More reason to pay and return
+
+Phase boundary:
+
+1. Phase 1 ships only fixed, category-specific presets for bags and small leather goods
+2. Those Phase 1 presets are internal generation recipes, not user-editable templates
+3. Users cannot save, edit, or reuse their own templates in Phase 1
+4. Phase 2 introduces editable and reusable saved templates
+5. Full brand-level preset management belongs to Phase 2, not the MVP
 
 ### 7.2 Capability 2: Platform-ready asset pack output
 
@@ -246,15 +310,27 @@ User value:
 
 Recommended route:
 
-> "Asset production workbench first, light content workflow second"
+> "Workflow-vertical asset production first, light content workflow second"
 
 That means:
 
-1. The main product is a seller asset workbench
-2. Content workflow support exists, but only where it directly improves conversion and seller usefulness
-3. Full platform publishing integrations are not MVP-critical
+1. The main product is a seller asset production workbench
+2. The first commercial promise is repeated workflow efficiency, not raw generation novelty
+3. Content workflow support exists, but only where it directly improves conversion and seller usefulness
+4. Full platform publishing integrations are not MVP-critical
 
-### 8.2 Explicit non-goals for MVP
+### 8.2 Recommended market-facing packaging
+
+The product should be introduced in three progressively deeper messages:
+
+1. Entry message:
+   - "Upload product photos and get a platform-ready asset pack"
+2. Workflow message:
+   - "Batch-produce assets for repeated product launches"
+3. Retention message:
+   - "Save templates and keep brand consistency across products"
+
+### 8.3 Explicit non-goals for MVP
 
 Do not make these MVP centerpieces:
 
@@ -294,12 +370,12 @@ The product should be designed in three layers:
 
 The desired primary user flow:
 
-1. User chooses category-friendly workflow
+1. User enters a launch workflow, not a generic generation playground
 2. User uploads one or more product images
-3. System analyzes product and suggests best presentation route
-4. User selects a template or brand preset
-5. System generates 3D result
-6. System outputs platform-ready asset pack and copy
+3. System analyzes product and suggests the best output route
+4. User selects one fixed bag/leather-goods preset in Phase 1; saved templates and brand presets arrive in Phase 2
+5. System generates the 3D-enhanced result
+6. System outputs a platform-ready asset pack and copy
 7. User previews, downloads, and reuses settings for the next product
 
 ## 10. Phased Roadmap
@@ -313,7 +389,7 @@ Make a single seller finish one useful workflow and feel comfortable paying for 
 Must-have outcomes:
 
 1. Clear homepage and product narrative for sellers
-2. End-to-end generation workflow polished
+2. End-to-end workflow polished around one repeated seller task
 3. Result page with platform-ready assets and copy
 4. Simple download packaging
 5. Basic usage gating for trial vs paid usage
@@ -329,6 +405,16 @@ Recommended Phase 1 gating model:
    - All platform outputs in the MVP package
    - Copy pack included
 3. No subscription system is required for the first validation slice if it slows shipping; single-order payment is acceptable for early validation
+4. Recommended paid gate mechanism:
+   - User can complete generation and see the result preview for free
+   - User must pay to unlock the full launch-ready asset pack download
+   - Phase 1 planning should assume manual order confirmation or a very lightweight single-payment flow, not a full subscription or billing system
+
+Phase 1 positioning rule:
+
+1. Users should understand the product as "asset pack generation for repeated listing workflows"
+2. Users should not need to understand 3D terminology to get value
+3. The workflow should feel closer to "launch my product assets" than "create a 3D model"
 
 ### Phase 2: Main-axis differentiation
 
@@ -342,6 +428,8 @@ Must-have outcomes:
 2. Brand consistency presets
 3. Batch upload and batch generation
 4. Queue/task organization
+
+Phase 2 should be the true center of gravity for the product. This is where competition pressure should drop, because the product stops being a single-output generator and becomes a repeated-workflow tool.
 
 ### Phase 3: Content workflow expansion
 
@@ -381,6 +469,27 @@ Not required in Phase 1:
 2. Direct publishing APIs
 3. Full batch ZIP management for large teams
 
+The market-facing description should refer to this as:
+
+> "A launch-ready asset pack"
+
+not as:
+
+> "export formats"
+
+because users buy outcomes, not file semantics.
+
+## 10.2 Preset and template boundary
+
+To avoid scope confusion, the boundary between MVP presets and later templates is:
+
+| Capability | Phase 1 MVP | Phase 2 |
+|------------|-------------|---------|
+| Fixed category presets | Yes | Yes |
+| User-editable presets | No | Yes |
+| User-saved reusable templates | No | Yes |
+| Brand-level preset management | No | Yes |
+
 ### Phase 4: Stronger moat and portfolio value
 
 Goal:
@@ -419,6 +528,7 @@ Key proof points:
 1. A seller can produce usable assets in under 10 minutes
 2. At least one target category gets consistent positive feedback
 3. Users value output package completeness, not only model generation
+4. Users describe the workflow as time-saving for repeated launches, not just visually impressive
 
 ### 11.3 Career leverage metrics
 
@@ -459,8 +569,9 @@ Use a strict phased roadmap and keep MVP centered on one seller completing one v
 
 This spec is intentionally scoped to one product direction and one roadmap system. It should lead to a single implementation planning effort focused on:
 
-1. Repositioning the product narrative
+1. Repositioning the product narrative around workflow efficiency
 2. Polishing the MVP workflow
 3. Adding the first differentiated seller capabilities
+4. Establishing the product around repeated asset production, not generic generation
 
 It should not expand into separate independent planning tracks for enterprise collaboration, marketplace ecosystems, or advanced editor products at this stage.
