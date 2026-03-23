@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
-import { buildPhase1AssetPack } from '../lib/seller-workflow/asset-pack';
+import {
+  buildPhase1AssetPack,
+  type Phase1AssetPackSnapshot,
+} from '../lib/seller-workflow/asset-pack';
 
 async function main() {
   const modelId = 'model_abc123';
-  const snapshotFixture = {
+  const snapshotFixture: Phase1AssetPackSnapshot = {
     version: 1 as const,
     copy: {
       taobao: {
@@ -31,6 +34,64 @@ async function main() {
       materialFocus: ['皮质'],
       marketingHook: '强调高频通勤场景价值',
       reasoningSummary: '以通勤转化为目标，统一三平台叙事。',
+    },
+    manifest: {
+      filename: 'asset-pack-manifest.json',
+      model: {
+        downloadUrl: 'https://fixture.example.com/model.glb',
+        filename: 'model.glb',
+      },
+      assets: [
+        {
+          platform: 'taobao',
+          filename: 'taobao-800x800.jpg',
+          previewUrl: 'https://fixture.example.com/preview.jpg',
+          downloadUrl: '/api/models/model_abc123/asset-pack-assets/taobao',
+          mimeType: 'image/jpeg',
+          width: 800,
+          height: 800,
+        },
+        {
+          platform: 'xiaohongshu',
+          filename: 'xiaohongshu-1242x1660.jpg',
+          previewUrl: 'https://fixture.example.com/preview.jpg',
+          downloadUrl: '/api/models/model_abc123/asset-pack-assets/xiaohongshu',
+          mimeType: 'image/jpeg',
+          width: 1242,
+          height: 1660,
+        },
+        {
+          platform: 'douyin',
+          filename: 'douyin-1080x1920.jpg',
+          previewUrl: 'https://fixture.example.com/preview.jpg',
+          downloadUrl: '/api/models/model_abc123/asset-pack-assets/douyin',
+          mimeType: 'image/jpeg',
+          width: 1080,
+          height: 1920,
+        },
+      ],
+      copyFiles: [
+        {
+          filename: 'taobao-copy.md',
+          content: '# fixture taobao',
+          mimeType: 'text/markdown',
+        },
+        {
+          filename: 'xiaohongshu-copy.md',
+          content: '# fixture xiaohongshu',
+          mimeType: 'text/markdown',
+        },
+        {
+          filename: 'douyin-copy.md',
+          content: '# fixture douyin',
+          mimeType: 'text/markdown',
+        },
+      ],
+      strategyFile: {
+        filename: 'strategy-summary.json',
+        content: '{"from":"fixture"}',
+        mimeType: 'application/json',
+      },
     },
   };
 
@@ -82,8 +143,18 @@ async function main() {
   );
   assert.equal(
     pack.manifest.model.downloadUrl,
-    'https://example.com/model.glb',
+    snapshotFixture.manifest.model.downloadUrl,
     'manifest model download url mismatch'
+  );
+  assert.deepEqual(
+    pack.manifest,
+    snapshotFixture.manifest,
+    'manifest should come from persisted snapshot contract'
+  );
+  assert.deepEqual(
+    pack.snapshot,
+    snapshotFixture,
+    'pack.snapshot should preserve the canonical snapshot shape'
   );
 
   console.log('[test-phase1-asset-pack] PASS');

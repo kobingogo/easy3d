@@ -78,11 +78,7 @@ export interface BuildPhase1AssetPackInput {
   presetKey: Phase1Preset['key']
   thumbnailUrl: string
   modelDownloadUrl: string
-  assetPackSnapshot?: {
-    version: 1
-    copy: Phase1AssetPackCopy
-    strategy: Phase1AssetPackStrategy
-  }
+  assetPackSnapshot?: Phase1AssetPackSnapshot
 }
 
 export interface MaterializePhase1AssetPackSnapshotInput {
@@ -115,14 +111,7 @@ export function buildPhase1AssetPack(
 
   const snapshotCore = input.assetPackSnapshot
 
-  const manifest = buildManifest({
-    modelId: input.modelId,
-    modelDownloadUrl: input.modelDownloadUrl,
-    thumbnailUrl: input.thumbnailUrl,
-    preset,
-    copy: snapshotCore.copy,
-    strategy: snapshotCore.strategy
-  })
+  const manifest = snapshotCore.manifest
 
   const platformAssets = manifest.assets.map((asset) => {
     const spec = getPlatformSpec(asset.platform)
@@ -142,12 +131,7 @@ export function buildPhase1AssetPack(
     presetKey: input.presetKey,
     modelDownloadUrl: input.modelDownloadUrl,
     manifest,
-    snapshot: {
-      version: 1,
-      copy: snapshotCore.copy,
-      strategy: snapshotCore.strategy,
-      manifest
-    },
+    snapshot: snapshotCore,
     strategy: snapshotCore.strategy,
     platformAssets,
     copy: snapshotCore.copy
@@ -156,11 +140,7 @@ export function buildPhase1AssetPack(
 
 export async function materializePhase1AssetPackSnapshot(
   input: MaterializePhase1AssetPackSnapshotInput
-): Promise<{
-  copy: Phase1AssetPack['copy']
-  strategy: Phase1AssetPack['strategy']
-  manifest: AssetPackManifest
-}> {
+): Promise<Phase1AssetPackSnapshot> {
   const preset = getPhase1Preset(input.category)
   if (preset.key !== input.presetKey) {
     throw new Error(
@@ -221,23 +201,20 @@ export async function materializePhase1AssetPackSnapshot(
     keyFeatures: input.analysisSummary.keyFeatures
   })
 
-  const pack = buildPhase1AssetPack({
+  const manifest = buildManifest({
     modelId: input.modelId,
-    category: input.category,
-    presetKey: input.presetKey,
-    thumbnailUrl: input.sourceImageUrl,
     modelDownloadUrl: input.modelDownloadUrl,
-    assetPackSnapshot: {
-      version: 1,
-      copy,
-      strategy
-    }
+    thumbnailUrl: input.sourceImageUrl,
+    preset,
+    copy,
+    strategy
   })
 
   return {
+    version: 1,
     copy,
     strategy,
-    manifest: pack.manifest
+    manifest
   }
 }
 
