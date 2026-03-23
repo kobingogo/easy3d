@@ -17,6 +17,12 @@ interface ResolveUnlockViewResult {
   unlockView: ReturnType<typeof deriveUnlockView>
 }
 
+type UnlockRequestsRouteTestOverrides = {
+  createClient?: typeof createClient
+}
+
+const testOverrides: UnlockRequestsRouteTestOverrides = {}
+
 function buildUnlockRequestInsertPayload(payload: UnlockRequestPayload) {
   return toUnlockRequestInsert(payload)
 }
@@ -48,7 +54,8 @@ function resolveUnlockViewFromRequests(
 export async function POST(request: NextRequest) {
   try {
     const payload = (await request.json()) as UnlockRequestPayload
-    const supabase = await createClient()
+    const supabaseFactory = testOverrides.createClient ?? createClient
+    const supabase = await supabaseFactory()
     const insertPayload = buildUnlockRequestInsertPayload(payload)
 
     const { data, error } = await supabase
@@ -96,7 +103,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'modelId is required' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabaseFactory = testOverrides.createClient ?? createClient
+    const supabase = await supabaseFactory()
     const { data, error } = await supabase
       .from('unlock_requests')
       .select('*')
@@ -128,9 +136,24 @@ export async function GET(request: NextRequest) {
     buildUnlockRequestInsertPayload: typeof buildUnlockRequestInsertPayload
     mapUnlockInsertErrorStatus: typeof mapUnlockInsertErrorStatus
     resolveUnlockViewFromRequests: typeof resolveUnlockViewFromRequests
+    setTestOverrides: (overrides: UnlockRequestsRouteTestOverrides) => void
+    resetTestOverrides: () => void
   }
 }).__testables = {
   buildUnlockRequestInsertPayload,
   mapUnlockInsertErrorStatus,
   resolveUnlockViewFromRequests,
+  setTestOverrides: (overrides) => {
+    Object.assign(testOverrides, overrides)
+  },
+  resetTestOverrides: () => {
+    for (const key of Object.keys(testOverrides) as Array<
+      keyof UnlockRequestsRouteTestOverrides
+    >) {
+      delete testOverrides[key]
+    }
+  },
 }
+
+;(GET as typeof GET & { __testables?: (typeof POST & { __testables?: any })['__testables'] }).__testables =
+  (POST as typeof POST & { __testables?: any }).__testables

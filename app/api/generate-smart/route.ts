@@ -161,6 +161,16 @@ type Phase1TaskCreationFailureMetadata = Phase1ModelMetadata & {
   errorMessage?: string
 }
 
+type GenerateSmartTestOverrides = {
+  createClient?: typeof createClient
+  analyzeProduct?: typeof analyzeProduct
+  optimizePrompt?: typeof optimizePrompt
+  createTask?: typeof createTask
+  pollTaskStatus?: typeof pollTaskStatus
+}
+
+const testOverrides: GenerateSmartTestOverrides = {}
+
 function resolvePhase1Category(category: string): Phase1Category {
   return isPhase1CategorySupported(category) ? category : 'bags'
 }
@@ -275,8 +285,9 @@ export async function POST(request: NextRequest) {
     // ==================== Step 1: 产品分析 ====================
     const analysisStartTime = Date.now()
     let analysis: ProductAnalysis
+    const analyze = testOverrides.analyzeProduct ?? analyzeProduct
     try {
-      analysis = await analyzeProduct(mainImageUrl)
+      analysis = await analyze(mainImageUrl)
       console.log(`[generate-smart] Analysis completed in ${Date.now() - analysisStartTime}ms`)
     } catch (analyzeError: any) {
       console.error('[generate-smart] Analysis failed:', analyzeError.message)
@@ -296,8 +307,9 @@ export async function POST(request: NextRequest) {
     // ==================== Step 2: 提示词优化 ====================
     const optimizeStartTime = Date.now()
     let optimized: OptimizedPrompt
+    const optimize = testOverrides.optimizePrompt ?? optimizePrompt
     try {
-      optimized = await optimizePrompt(analysis)
+      optimized = await optimize(analysis)
       console.log(`[generate-smart] Optimization completed in ${Date.now() - optimizeStartTime}ms`)
     } catch (optimizeError: any) {
       console.error('[generate-smart] Optimization failed:', optimizeError.message)
@@ -311,7 +323,8 @@ export async function POST(request: NextRequest) {
     }
     console.log(`[generate-smart] Optimized prompt:`, optimized.prompt.slice(0, 200))
 
-    const supabase = await createClient()
+    const supabaseFactory = testOverrides.createClient ?? createClient
+    const supabase = await supabaseFactory()
     const uploadMode: Phase1UploadMode = isMultiview ? 'multiview' : 'single'
     const initialMetadata = buildInitialPhase1Metadata({
       uploadMode,
@@ -362,9 +375,10 @@ export async function POST(request: NextRequest) {
     console.log('[generate-smart] Tripo config:', JSON.stringify(tripoConfig))
 
     // 调用 Tripo API
+    const createTaskImpl = testOverrides.createTask ?? createTask
     let taskResponse
     try {
-      taskResponse = await createTask(
+      taskResponse = await createTaskImpl(
         isMultiview
           ? {
               type: 'multiview_to_model',
@@ -427,7 +441,8 @@ export async function POST(request: NextRequest) {
       .eq('id', modelId)
 
     // 异步轮询状态（不等待）
-    pollTaskStatus(taskId, {
+    const pollTaskStatusImpl = testOverrides.pollTaskStatus ?? pollTaskStatus
+    pollTaskStatusImpl(taskId, {
       onProgress: async (progress) => {
         console.log(`[generate-smart] Task ${taskId} progress: ${progress}%`)
       }
@@ -470,10 +485,22 @@ export async function POST(request: NextRequest) {
     buildInitialPhase1Metadata: typeof buildInitialPhase1Metadata
     buildTaskCreationFailedMetadata: typeof buildTaskCreationFailedMetadata
     buildGenerateSmartSuccessResponse: typeof buildGenerateSmartSuccessResponse
+    setTestOverrides: (overrides: GenerateSmartTestOverrides) => void
+    resetTestOverrides: () => void
   }
 }).__testables = {
   resolvePhase1Category,
   buildInitialPhase1Metadata,
   buildTaskCreationFailedMetadata,
   buildGenerateSmartSuccessResponse,
+  setTestOverrides: (overrides) => {
+    Object.assign(testOverrides, overrides)
+  },
+  resetTestOverrides: () => {
+    for (const key of Object.keys(testOverrides) as Array<
+      keyof GenerateSmartTestOverrides
+    >) {
+      delete testOverrides[key]
+    }
+  },
 }

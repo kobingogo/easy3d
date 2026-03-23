@@ -25,6 +25,15 @@ interface StatusResponseInput {
   modelId: string | null
 }
 
+type TripoStatusRouteTestOverrides = {
+  createClient?: typeof createClient
+  getTaskStatus?: typeof getTaskStatus
+  isTripoConfigured?: typeof isTripoConfigured
+  materializePhase1AssetPackSnapshot?: typeof materializePhase1AssetPackSnapshot
+}
+
+const testOverrides: TripoStatusRouteTestOverrides = {}
+
 function asPhase1ModelMetadata(metadata: unknown): Phase1ModelMetadata | null {
   if (!metadata || typeof metadata !== 'object') {
     return null
@@ -215,7 +224,10 @@ async function materializeSnapshotIfNeeded(input: {
   }
 
   try {
-    const snapshot = await materializePhase1AssetPackSnapshot({
+    const materializeImpl =
+      testOverrides.materializePhase1AssetPackSnapshot ??
+      materializePhase1AssetPackSnapshot
+    const snapshot = await materializeImpl({
       modelId: input.model.id,
       category: metadata.category,
       presetKey: metadata.presetKey,
@@ -253,11 +265,14 @@ export async function GET(
       return NextResponse.json({ error: 'taskId is required' }, { status: 400 })
     }
 
-    if (!isTripoConfigured()) {
+    const isTripoConfiguredImpl =
+      testOverrides.isTripoConfigured ?? isTripoConfigured
+    if (!isTripoConfiguredImpl()) {
       return NextResponse.json({ error: 'Tripo API Key not configured' }, { status: 500 })
     }
 
-    const status = await getTaskStatus(taskId)
+    const getTaskStatusImpl = testOverrides.getTaskStatus ?? getTaskStatus
+    const status = await getTaskStatusImpl(taskId)
     const modelUrl =
       status.data.output?.pbr_model || status.data.result?.pbr_model?.url || null
     const thumbnailUrl =
@@ -265,7 +280,8 @@ export async function GET(
       status.data.result?.rendered_image?.url ||
       null
 
-    const supabase = await createClient()
+    const createClientImpl = testOverrides.createClient ?? createClient
+    const supabase = await createClientImpl()
     const model = await fetchModelByTaskId(supabase, taskId)
     const modelId = model?.id ?? null
 
@@ -327,8 +343,20 @@ export async function GET(
   __testables?: {
     shouldMaterializeSnapshot: typeof shouldMaterializeSnapshot
     buildMaterializationProductDescription: typeof buildMaterializationProductDescription
+    setTestOverrides: (overrides: TripoStatusRouteTestOverrides) => void
+    resetTestOverrides: () => void
   }
 }).__testables = {
   shouldMaterializeSnapshot,
   buildMaterializationProductDescription,
+  setTestOverrides: (overrides) => {
+    Object.assign(testOverrides, overrides)
+  },
+  resetTestOverrides: () => {
+    for (const key of Object.keys(testOverrides) as Array<
+      keyof TripoStatusRouteTestOverrides
+    >) {
+      delete testOverrides[key]
+    }
+  },
 }

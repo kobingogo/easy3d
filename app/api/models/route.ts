@@ -35,6 +35,12 @@ interface StrategySummary {
   featureFocus?: string[]
 }
 
+type ModelsRouteTestOverrides = {
+  createClient?: typeof createClient
+}
+
+const testOverrides: ModelsRouteTestOverrides = {}
+
 function extractCopySummary(metadata: any): CopySummary | null {
   const copy = metadata?.assetPackSnapshot?.copy
   if (!copy) {
@@ -101,7 +107,8 @@ function composeModelDetail(input: ComposeModelDetailInput) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabaseFactory = testOverrides.createClient ?? createClient
+    const supabase = await supabaseFactory()
     const { searchParams } = new URL(request.url)
     const modelId = searchParams.get('id')
 
@@ -186,7 +193,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Model ID is required' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabaseFactory = testOverrides.createClient ?? createClient
+    const supabase = await supabaseFactory()
 
     const { data: model, error: fetchError } = await supabase
       .from('models')
@@ -231,7 +239,20 @@ export async function DELETE(request: NextRequest) {
 ;(GET as typeof GET & {
   __testables?: {
     composeModelDetail: typeof composeModelDetail
+    setTestOverrides: (overrides: ModelsRouteTestOverrides) => void
+    resetTestOverrides: () => void
   }
 }).__testables = {
   composeModelDetail,
+  setTestOverrides: (overrides) => {
+    Object.assign(testOverrides, overrides)
+  },
+  resetTestOverrides: () => {
+    for (const key of Object.keys(testOverrides) as Array<keyof ModelsRouteTestOverrides>) {
+      delete testOverrides[key]
+    }
+  },
 }
+
+;(DELETE as typeof DELETE & { __testables?: (typeof GET & { __testables?: any })['__testables'] }).__testables =
+  (GET as typeof GET & { __testables?: any }).__testables
