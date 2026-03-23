@@ -7,6 +7,7 @@ import { getPlatformSpec, type Platform } from '@/lib/export/platform-adapter'
 import { ArrowRight, CheckCircle2, Clock3, Eye, Lock, PackageOpen, Sparkles } from 'lucide-react'
 
 type UnlockState = 'preview_only' | 'requested' | 'approved' | 'rejected' | 'unlocked'
+const KNOWN_UNLOCK_STATES: UnlockState[] = ['preview_only', 'requested', 'approved', 'rejected', 'unlocked']
 
 interface CopySummary {
   taobaoTitle?: string
@@ -70,8 +71,12 @@ function formatTimeLabel(value?: string) {
   }).format(parsed)
 }
 
+function normalizeUnlockState(value?: string | null): UnlockState {
+  return KNOWN_UNLOCK_STATES.includes(value as UnlockState) ? (value as UnlockState) : 'preview_only'
+}
+
 function getUnlockMeta(unlockView?: UnlockView | null) {
-  const state = unlockView?.currentState ?? 'preview_only'
+  const state = normalizeUnlockState(unlockView?.currentState)
   const labels: Record<
     UnlockState,
     { badge: string; description: string; accent: string; icon: typeof Lock }
@@ -170,7 +175,7 @@ export function AssetPackPreview({
   onRequestUnlock,
   onDownloadFullPack,
 }: AssetPackPreviewProps) {
-  const currentState = unlockView?.currentState ?? 'preview_only'
+  const currentState = normalizeUnlockState(unlockView?.currentState)
   const unlockMeta = getUnlockMeta(unlockView)
   const UnlockIcon = unlockMeta.icon
 
@@ -202,6 +207,7 @@ export function AssetPackPreview({
   const primaryActionDisabled =
     currentState === 'requested' ||
     currentState === 'approved' ||
+    ((currentState === 'preview_only' || currentState === 'rejected') && !onRequestUnlock) ||
     (currentState === 'unlocked' && !isDownloadReady && !onDownloadFullPack)
 
   return (

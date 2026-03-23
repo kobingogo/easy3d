@@ -109,6 +109,11 @@ interface UnlockRequestState {
   error: string | null
 }
 
+interface GenerationSession {
+  runId: number
+  taskId: string | null
+}
+
 const initialGenerationState: GenerationState = {
   status: 'idle',
   progress: 0,
@@ -146,6 +151,8 @@ export default function GeneratePage() {
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const detailPollingRef = useRef<NodeJS.Timeout | null>(null)
+  const generationSessionRef = useRef<GenerationSession>({ runId: 0, taskId: null })
+  const pollRequestControllerRef = useRef<AbortController | null>(null)
   const unlockFormRef = useRef<HTMLDivElement | null>(null)
 
   const clearRuntimeTimers = useCallback(() => {
@@ -158,6 +165,24 @@ export default function GeneratePage() {
       clearTimeout(detailPollingRef.current)
       detailPollingRef.current = null
     }
+
+    if (pollRequestControllerRef.current) {
+      pollRequestControllerRef.current.abort()
+      pollRequestControllerRef.current = null
+    }
+  }, [])
+
+  const isCurrentGenerationSession = useCallback((runId: number, taskId?: string | null) => {
+    const currentSession = generationSessionRef.current
+    if (currentSession.runId !== runId) {
+      return false
+    }
+
+    if (typeof taskId === 'undefined') {
+      return true
+    }
+
+    return currentSession.taskId === taskId
   }, [])
 
   useEffect(() => {
@@ -215,6 +240,10 @@ export default function GeneratePage() {
   }
 
   const resetGeneration = useCallback(() => {
+    generationSessionRef.current = {
+      runId: generationSessionRef.current.runId + 1,
+      taskId: null,
+    }
     clearRuntimeTimers()
     setGeneration(initialGenerationState)
     setModelDetailState(initialModelDetailState)
@@ -222,7 +251,11 @@ export default function GeneratePage() {
     setShowCelebration(false)
   }, [clearRuntimeTimers])
 
-  const fetchUnlockState = useCallback(async (modelId: string, silent = false) => {
+  const fetchUnlockState = useCallback(async (modelId: string, silent = false, runId?: number) => {
+    if (typeof runId === 'number' && !isCurrentGenerationSession(runId)) {
+      return
+    }
+
     if (!silent) {
       setUnlockRequestState((prev) => ({
         ...prev,
@@ -241,21 +274,33 @@ export default function GeneratePage() {
         throw new Error(data.error || '获取解锁状态失败')
       }
 
+      if (typeof runId === 'number' && !isCurrentGenerationSession(runId)) {
+        return
+      }
+
       setUnlockRequestState({
         status: 'ready',
         view: data.unlockView,
         error: null,
       })
     } catch (error: any) {
+      if (typeof runId === 'number' && !isCurrentGenerationSession(runId)) {
+        return
+      }
+
       setUnlockRequestState((prev) => ({
         status: 'error',
         view: prev.view,
         error: error?.message || '获取解锁状态失败',
       }))
     }
-  }, [])
+  }, [isCurrentGenerationSession])
 
-  const fetchModelDetail = useCallback(async (modelId: string, attempt = 0) => {
+  const fetchModelDetail = useCallback(async (modelId: string, attempt = 0, runId?: number) => {
+    if (typeof runId === 'number' && !isCurrentGenerationSession(runId)) {
+      return
+    }
+
     if (attempt === 0) {
       setModelDetailState((prev) => ({
         status: 'loading',
@@ -272,6 +317,10 @@ export default function GeneratePage() {
 
       if (!response.ok) {
         throw new Error(data.error || '获取素材包详情失败')
+      }
+
+      if (typeof runId === 'number' && !isCurrentGenerationSession(runId)) {
+        return
       }
 
       const model = data.model as PersistedModelDetail
@@ -293,35 +342,52 @@ export default function GeneratePage() {
 
       if (!previewReady && attempt < 4) {
         detailPollingRef.current = setTimeout(() => {
-          void fetchModelDetail(modelId, attempt + 1)
+          void fetchModelDetail(modelId, attempt + 1, runId)
         }, 2500)
       }
     } catch (error: any) {
+      if (typeof runId === 'number' && !isCurrentGenerationSession(runId)) {
+        return
+      }
+
       setModelDetailState((prev) => ({
         status: 'error',
         model: prev.model,
         error: error?.message || '获取素材包详情失败',
       }))
     }
-  }, [])
+  }, [isCurrentGenerationSession])
 
-  const refreshPersistedResult = useCallback(async (modelId: string) => {
+  const refreshPersistedResult = useCallback(async (modelId: string, runId?: number) => {
     clearRuntimeTimers()
     await Promise.all([
-      fetchModelDetail(modelId),
-      fetchUnlockState(modelId, true),
+      fetchModelDetail(modelId, 0, runId),
+      fetchUnlockState(modelId, true, runId),
     ])
   }, [clearRuntimeTimers, fetchModelDetail, fetchUnlockState])
 
-  const pollStatus = useCallback(async (taskId: string) => {
+  const pollStatus = useCallback(async (taskId: string, runId: number) => {
+    if (!isCurrentGenerationSession(runId, taskId)) {
+      return
+    }
+
+    pollRequestControllerRef.current?.abort()
+    const controller = new AbortController()
+    pollRequestControllerRef.current = controller
+
     try {
       const response = await fetch(`/api/tripo/status/${taskId}`, {
         cache: 'no-store',
+        signal: controller.signal,
       })
       const data = await response.json()
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || '获取生成状态失败')
+      }
+
+      if (!isCurrentGenerationSession(runId, taskId)) {
+        return
       }
 
       setGeneration((prev) => ({
@@ -335,6 +401,11 @@ export default function GeneratePage() {
 
         const now = Date.now()
         const resolvedModelId = data.modelId || generation.modelId
+
+        generationSessionRef.current = {
+          runId,
+          taskId,
+        }
 
         setGeneration((prev) => ({
           ...prev,
@@ -351,10 +422,12 @@ export default function GeneratePage() {
         }))
 
         if (resolvedModelId) {
-          await refreshPersistedResult(resolvedModelId)
+          await refreshPersistedResult(resolvedModelId, runId)
         }
 
-        setShowCelebration(true)
+        if (isCurrentGenerationSession(runId, taskId)) {
+          setShowCelebration(true)
+        }
       } else if (data.status === 'failed') {
         clearRuntimeTimers()
         setGeneration((prev) => ({
@@ -364,6 +437,14 @@ export default function GeneratePage() {
         }))
       }
     } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        return
+      }
+
+      if (!isCurrentGenerationSession(runId, taskId)) {
+        return
+      }
+
       console.error('Poll error:', error)
       setGeneration((prev) => ({
         ...prev,
@@ -371,8 +452,12 @@ export default function GeneratePage() {
         error: error?.message || '获取生成状态失败',
       }))
       clearRuntimeTimers()
+    } finally {
+      if (pollRequestControllerRef.current === controller) {
+        pollRequestControllerRef.current = null
+      }
     }
-  }, [clearRuntimeTimers, generation.modelId, refreshPersistedResult])
+  }, [clearRuntimeTimers, generation.modelId, isCurrentGenerationSession, refreshPersistedResult])
 
   const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData()
@@ -422,6 +507,7 @@ export default function GeneratePage() {
   const handleSingleGenerate = useCallback(async () => {
     if (!uploadedFile) return
 
+    const runId = generationSessionRef.current.runId
     const startTime = Date.now()
 
     try {
@@ -433,6 +519,10 @@ export default function GeneratePage() {
       }))
 
       const imageUrl = await uploadFile(uploadedFile)
+      if (!isCurrentGenerationSession(runId)) {
+        return
+      }
+
       const uploadDuration = Date.now() - startTime
 
       const analyzeStart = Date.now()
@@ -457,6 +547,10 @@ export default function GeneratePage() {
         throw new Error(data.error || '生成请求失败')
       }
 
+      if (!isCurrentGenerationSession(runId)) {
+        return
+      }
+
       const analyzeDuration = Date.now() - analyzeStart
 
       setGeneration((prev) => ({
@@ -469,8 +563,13 @@ export default function GeneratePage() {
         stepDurations: { ...prev.stepDurations, analyze: analyzeDuration },
       }))
 
+      generationSessionRef.current = {
+        runId,
+        taskId: data.taskId,
+      }
+
       pollingRef.current = setInterval(() => {
-        void pollStatus(data.taskId)
+        void pollStatus(data.taskId, runId)
       }, 3000)
     } catch (error: any) {
       setGeneration((prev) => ({
@@ -484,6 +583,7 @@ export default function GeneratePage() {
   const handleMultiviewGenerate = useCallback(async () => {
     if (multiViewImages.length < 2) return
 
+    const runId = generationSessionRef.current.runId
     const startTime = Date.now()
 
     try {
@@ -495,6 +595,10 @@ export default function GeneratePage() {
       }))
 
       const imageUrls = await Promise.all(multiViewImages.map((image) => uploadFile(image.file)))
+      if (!isCurrentGenerationSession(runId)) {
+        return
+      }
+
       const uploadDuration = Date.now() - startTime
 
       const analyzeStart = Date.now()
@@ -522,6 +626,10 @@ export default function GeneratePage() {
         throw new Error(data.error || '生成请求失败')
       }
 
+      if (!isCurrentGenerationSession(runId)) {
+        return
+      }
+
       const analyzeDuration = Date.now() - analyzeStart
 
       setGeneration((prev) => ({
@@ -534,8 +642,13 @@ export default function GeneratePage() {
         stepDurations: { ...prev.stepDurations, analyze: analyzeDuration },
       }))
 
+      generationSessionRef.current = {
+        runId,
+        taskId: data.taskId,
+      }
+
       pollingRef.current = setInterval(() => {
-        void pollStatus(data.taskId)
+        void pollStatus(data.taskId, runId)
       }, 3000)
     } catch (error: any) {
       setGeneration((prev) => ({
@@ -559,13 +672,15 @@ export default function GeneratePage() {
     setMultiViewZoneKey((prev) => prev + 1)
   }, [resetGeneration])
 
-  const handleOpenUnlockForm = useCallback(() => {
-    unlockFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
-
   const handleUnlockSubmitted = useCallback(async (result: UnlockRequestSubmitResult) => {
     const activeModelId = generation.modelId || modelDetailState.model?.id
+    const runId = generationSessionRef.current.runId
+
     if (result.unlockView) {
+      if (!isCurrentGenerationSession(runId)) {
+        return
+      }
+
       setUnlockRequestState({
         status: 'ready',
         view: result.unlockView,
@@ -574,12 +689,16 @@ export default function GeneratePage() {
     }
 
     if (activeModelId) {
+      if (!isCurrentGenerationSession(runId)) {
+        return
+      }
+
       await Promise.all([
-        fetchUnlockState(activeModelId, true),
-        fetchModelDetail(activeModelId),
+        fetchUnlockState(activeModelId, true, runId),
+        fetchModelDetail(activeModelId, 0, runId),
       ])
     }
-  }, [fetchModelDetail, fetchUnlockState, generation.modelId, modelDetailState.model?.id])
+  }, [fetchModelDetail, fetchUnlockState, generation.modelId, isCurrentGenerationSession, modelDetailState.model?.id])
 
   const isProcessing = ['uploading', 'generating', 'polling'].includes(generation.status)
   const currentModelId = generation.modelId || modelDetailState.model?.id || null
@@ -593,6 +712,16 @@ export default function GeneratePage() {
     modelDetailState.model?.metadata?.assetPackPreviewReady &&
       modelDetailState.model?.metadata?.assetPackSnapshot
   )
+  const canOpenUnlockForm = generation.status === 'completed' && assetPackReady && Boolean(currentModelId)
+  const canRequestUnlock =
+    canOpenUnlockForm && (currentUnlockState === 'preview_only' || currentUnlockState === 'rejected')
+  const handleOpenUnlockForm = useCallback(() => {
+    if (!canOpenUnlockForm) {
+      return
+    }
+
+    unlockFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [canOpenUnlockForm])
 
   const getStatusBadge = () => {
     switch (generation.status) {
@@ -684,7 +813,7 @@ export default function GeneratePage() {
           isLoading={isProcessing || modelDetailState.status === 'loading'}
           isReady={assetPackReady}
           isDownloadReady={false}
-          onRequestUnlock={handleOpenUnlockForm}
+          onRequestUnlock={canOpenUnlockForm ? handleOpenUnlockForm : undefined}
         />
       )
     }
@@ -957,7 +1086,7 @@ export default function GeneratePage() {
                 </CardContent>
               </Card>
 
-              {currentModelId && (currentUnlockState === 'preview_only' || currentUnlockState === 'rejected') && (
+              {currentModelId && canRequestUnlock && (
                 <div ref={unlockFormRef}>
                   <UnlockRequestForm
                     modelId={currentModelId}
