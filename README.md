@@ -2,7 +2,11 @@
 
 面向中小电商卖家的 AI 商品素材包工作台。
 
-当前 `Phase 1` 聚焦 `包袋 / 小皮具`，把原来的生成 demo 收敛成一条更接近真实卖家工作的链路：
+当前已进入 `Phase 2A`，在 `Phase 1` 单任务链路之上补齐批量上新闭环。产品仍聚焦 `包袋 / 小皮具`：
+
+`创建批次 -> 批量上传 -> 受控并发处理 -> 失败重试 -> 批量导出`
+
+保留 `Phase 1` 单任务链路用于补单与快速起稿：
 
 `上传商品图 -> 整理多平台素材包预览 -> 提交解锁请求 -> 下载完整素材包`
 
@@ -13,7 +17,16 @@
 - 主结果：淘宝主图、小红书封面、抖音竖图、平台文案、策略摘要
 - 商业边界：预览免费，完整素材包通过解锁流获取
 
-## Phase 1 能力
+## Phase 2A 能力（当前）
+
+- 批次创建与批量图片入队（单批次 1-20 项）
+- 批次级状态与子任务状态可视化
+- 受控并发处理（默认并发 3）
+- 失败子任务重试（`failed -> queued`）
+- 批量导出完成且已解锁的子任务交付包
+- Dashboard 默认入口升级为批量工作台，保留 `/generate` 单任务入口
+
+## Phase 1 能力（仍可用）
 
 - 固定 `Phase 1` 预设，明确只服务包袋 / 小皮具
 - 单图 / 多视角商品图上传
@@ -94,7 +107,8 @@ npx tsx scripts/build-knowledge.ts
 
 - `/`：卖家素材工作台首页
 - `/generate`：商品图上传与素材包生成
-- `/dashboard`：素材任务列表
+- `/dashboard`：批量上新工作台（默认入口）
+- `/dashboard/batches/:id`：批次详情、失败重试、批量下载
 
 ## 主要接口
 
@@ -103,6 +117,12 @@ npx tsx scripts/build-knowledge.ts
 - `GET /api/models`：读取素材任务与解锁状态
 - `GET /api/unlock-requests`：查询解锁请求状态
 - `POST /api/unlock-requests`：创建解锁请求
+- `POST /api/batches`：创建批次与子任务
+- `GET /api/batches`：查询批次列表
+- `GET /api/batches/:id`：查询批次详情与子任务
+- `POST /api/batches/:id/process`：推进队列处理
+- `POST /api/batches/:id/items/:itemId/retry`：重试失败子任务
+- `GET /api/batches/:id/download`：批量导出完成项
 
 ## 技术说明
 
@@ -116,6 +136,6 @@ npx tsx scripts/build-knowledge.ts
 
 ## 备注
 
-- `Phase 1` 不做开放模板市场、不做完整支付系统
+- `Phase 2A` 不做开放模板市场、不做完整支付系统
 - `鞋类` 属于下一阶段扩展，不在当前首发范围
 - `衣服 / 裙子` 这类依赖垂坠与动态质感的品类，不是当前主打

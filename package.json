@@ -15,7 +15,10 @@
     "test:rag": "npx tsx scripts/rag-benchmark.ts",
     "test:rag:verbose": "npx tsx scripts/rag-benchmark.ts --verbose",
     "test:ragas": "npx tsx scripts/ragas-evaluate.ts",
-    "test:ragas:verbose": "npx tsx scripts/ragas-evaluate.ts --verbose"
+    "test:ragas:verbose": "npx tsx scripts/ragas-evaluate.ts --verbose",
+    "test:phase2a:schema": "npx tsx scripts/test-phase2a-batch-schema.ts",
+    "test:phase2a:api": "npx tsx scripts/test-phase2a-batch-api.ts",
+    "test:phase2a:e2e": "npx tsx scripts/test-phase2a-batch-e2e-checklist.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

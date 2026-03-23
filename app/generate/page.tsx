@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertCircle, CheckCircle2, ImageIcon, Layers, Loader2, PackageOpen, RefreshCw, Sparkles } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ImageIcon, Layers, LayoutDashboard, Loader2, PackageOpen, RefreshCw, Sparkles } from 'lucide-react'
 import { ModelViewer } from '@/components/3d/ModelViewer'
 import { AssetPackPreview } from '@/components/generate/asset-pack-preview'
 import { Phase1PresetCard } from '@/components/generate/phase1-preset-card'
@@ -917,6 +918,14 @@ export default function GeneratePage() {
               先聚焦包袋 / 小皮具。上传一组图片，系统会生成 3D 底模并整理淘宝主图、小红书封面、
               抖音竖图与平台文案预览，再进入解锁交付流程。
             </p>
+            <div className="mt-4">
+              <Link href="/dashboard">
+                <Button variant="outline">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  进入批量上新工作台
+                </Button>
+              </Link>
+            </div>
           </motion.div>
 
           <motion.div
