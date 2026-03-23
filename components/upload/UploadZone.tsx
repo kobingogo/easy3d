@@ -116,15 +116,16 @@ export function UploadZone({
         <Upload className="h-12 w-12 text-muted-foreground" />
         <div>
           <p className="text-lg font-medium">
-            {isUploading ? '上传中...' : '拖拽图片到这里'}
+            {isUploading ? '上传中...' : '上传包袋 / 小皮具主图'}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            或点击选择文件
+            单图适合快速起稿，建议正面、纯色背景、包型完整可见
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">
-          支持 JPG、PNG、WebP，最大 {maxSize}MB，最多 {maxFiles} 张
-        </p>
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p>点击或拖拽上传，支持 JPG、PNG、WebP，最大 {maxSize}MB，最多 {maxFiles} 张</p>
+          <p>当前 Phase 1 更适合包袋 / 小皮具；如果想保留侧边和五金细节，更推荐多视角模式</p>
+        </div>
       </div>
 
       {error && (

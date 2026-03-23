@@ -20,10 +20,10 @@ interface MultiViewUploadZoneProps {
 }
 
 const VIEW_POSITIONS = [
-  { position: 'front' as const, label: '正面', description: '产品正面照片' },
-  { position: 'left' as const, label: '左侧', description: '产品左侧照片' },
-  { position: 'back' as const, label: '背面', description: '产品背面照片' },
-  { position: 'right' as const, label: '右侧', description: '产品右侧照片' },
+  { position: 'front' as const, label: '正面', description: '包型主视角，建议完整露出' },
+  { position: 'left' as const, label: '左侧', description: '补充侧边厚度与肩带连接' },
+  { position: 'back' as const, label: '背面', description: '补充背幅、口袋与结构信息' },
+  { position: 'right' as const, label: '右侧', description: '补充五金、轮廓和开合细节' },
 ]
 
 export function MultiViewUploadZone({
@@ -165,14 +165,15 @@ export function MultiViewUploadZone({
         <div className="flex flex-col items-center justify-center gap-3 text-center">
           <Upload className="h-10 w-10 text-muted-foreground" />
           <div>
-            <p className="text-base font-medium">拖拽多视角图片到这里</p>
+            <p className="text-base font-medium">上传包袋 / 小皮具多视角图片</p>
             <p className="text-sm text-muted-foreground mt-1">
-              支持 2-4 张图片，自动分配位置
+              包袋更推荐多视角，支持 2-4 张图片并自动分配位置
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            正面必填，其他视角可选
-          </p>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>正面建议必填；补充侧面、背面后，更容易保留包型比例、容量感和五金细节</p>
+            <p>同一产品请保持一致布光和距离，避免过度遮挡提手、肩带与开合结构</p>
+          </div>
         </div>
       </div>
 
@@ -244,7 +245,7 @@ export function MultiViewUploadZone({
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           已上传 {images.length}/4 张图片
-          {images.length < 2 && '（至少需要 2 张）'}
+          {images.length < 2 && '（至少需要 2 张，包袋建议 3-4 张）'}
         </p>
 
         {images.length > 0 && (
@@ -268,7 +269,7 @@ export function MultiViewUploadZone({
           disabled={disabled}
           className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          使用 {images.length} 张图片生成 3D 模型
+          使用 {images.length} 张图片进入素材包生成
         </button>
       )}
     </div>
