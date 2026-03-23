@@ -7,6 +7,7 @@ import {
 
 const supportedCategory = 'bags';
 const unsupportedCategory = 'shoes';
+const runtimeInvalidCategory = 'shoes' as unknown as Parameters<typeof getPhase1Preset>[0];
 
 assert.equal(isPhase1CategorySupported(supportedCategory), true);
 assert.equal(isPhase1CategorySupported(unsupportedCategory), false);
@@ -16,6 +17,10 @@ if (isPhase1CategorySupported(supportedCategory)) {
 }
 
 assert.deepEqual(getPhase1Preset(supportedCategory), PHASE1_BAG_PRESET);
+
+assert.throws(() => {
+  getPhase1Preset(runtimeInvalidCategory);
+}, /Unsupported Phase1 category: shoes/);
 
 assert.deepEqual(PHASE1_BAG_PRESET, {
   key: 'bag-studio-phase1',

@@ -15,7 +15,7 @@ export function getPhase1Preset(category: Phase1Category): Phase1Preset {
       return PHASE1_BAG_PRESET
   }
 
-  return PHASE1_BAG_PRESET
+  throw new Error(`Unsupported Phase1 category: ${category}`)
 }
 
 export function isPhase1CategorySupported(
