@@ -12,6 +12,6 @@ export interface Phase1Preset {
   category: Phase1Category
   label: string
   description: string
-  copyTone: string
+  copyTone: 'premium' | 'friendly'
   targetPlatforms: Array<'taobao' | 'xiaohongshu' | 'douyin'>
 }
