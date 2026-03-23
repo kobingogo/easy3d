@@ -439,6 +439,12 @@ export async function POST(request: NextRequest) {
         status: 'processing',
       })
       .eq('id', modelId)
+      .select('id')
+      .then(({ data, error }: { data: Array<{ id: string }> | null; error: any }) => {
+        if (error || !data || data.length === 0) {
+          throw new Error('Failed to persist task linkage')
+        }
+      })
 
     // 异步轮询状态（不等待）
     const pollTaskStatusImpl = testOverrides.pollTaskStatus ?? pollTaskStatus
