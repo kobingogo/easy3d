@@ -23,7 +23,13 @@ CREATE TABLE IF NOT EXISTS public.unlock_requests (
   CONSTRAINT unlock_requests_rejected_requires_status
     CHECK (rejected_at IS NULL OR status = 'rejected'),
   CONSTRAINT unlock_requests_fulfilled_requires_approved
-    CHECK (fulfilled_at IS NULL OR status = 'approved')
+    CHECK (fulfilled_at IS NULL OR status = 'approved'),
+  CONSTRAINT unlock_requests_lifecycle_consistency_check
+    CHECK (
+      (status = 'submitted' AND approved_at IS NULL AND rejected_at IS NULL AND fulfilled_at IS NULL)
+      OR (status = 'approved' AND approved_at IS NOT NULL AND rejected_at IS NULL)
+      OR (status = 'rejected' AND rejected_at IS NOT NULL AND approved_at IS NULL AND fulfilled_at IS NULL)
+    )
 );
 
 ALTER TABLE public.unlock_requests
@@ -40,6 +46,24 @@ BEGIN
     ALTER TABLE public.unlock_requests
     ADD CONSTRAINT unlock_requests_approved_requires_status
     CHECK (approved_at IS NULL OR status = 'approved');
+  END IF;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'unlock_requests_lifecycle_consistency_check'
+  ) THEN
+    ALTER TABLE public.unlock_requests
+    ADD CONSTRAINT unlock_requests_lifecycle_consistency_check
+    CHECK (
+      (status = 'submitted' AND approved_at IS NULL AND rejected_at IS NULL AND fulfilled_at IS NULL)
+      OR (status = 'approved' AND approved_at IS NOT NULL AND rejected_at IS NULL)
+      OR (status = 'rejected' AND rejected_at IS NOT NULL AND approved_at IS NULL AND fulfilled_at IS NULL)
+    );
   END IF;
 END;
 $$;

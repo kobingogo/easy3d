@@ -20,6 +20,7 @@ export interface UnlockRequestInsert {
   note: string | null
   approved_at: string | null
   rejected_at: string | null
+  fulfilled_at: string | null
 }
 
 export interface UnlockRequestRow {
@@ -47,6 +48,11 @@ export interface UnlockRequestUpdate {
   rejected_at?: string | null
   fulfilled_at?: string | null
 }
+
+export type UnlockRequestLifecycle = Pick<
+  UnlockRequestRow,
+  'status' | 'approved_at' | 'rejected_at' | 'fulfilled_at'
+>
 
 export interface UnlockRequestView {
   currentState: UnlockStatus
@@ -102,7 +108,30 @@ export function toUnlockRequestInsert(
     note: normalized.note ?? null,
     approved_at: null,
     rejected_at: null,
+    fulfilled_at: null,
   }
+}
+
+export function isUnlockRequestLifecycleConsistent(
+  request: UnlockRequestLifecycle
+): boolean {
+  if (request.status === 'submitted') {
+    return (
+      request.approved_at === null &&
+      request.rejected_at === null &&
+      request.fulfilled_at === null
+    )
+  }
+
+  if (request.status === 'approved') {
+    return request.approved_at !== null && request.rejected_at === null
+  }
+
+  return (
+    request.rejected_at !== null &&
+    request.approved_at === null &&
+    request.fulfilled_at === null
+  )
 }
 
 export function isUnlockRequestStatusActive(

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
   findActiveUnlockRequest,
   findLatestRejectedUnlockRequest,
+  isUnlockRequestLifecycleConsistent,
   mapUnlockRequestInsertErrorToHttpStatus,
   normalizeUnlockRequestPayload,
   toUnlockRequestInsert,
@@ -52,6 +53,7 @@ async function main() {
     note: '请联系我',
     approved_at: null,
     rejected_at: null,
+    fulfilled_at: null,
   })
 
   const previewOnly = deriveUnlockView({
@@ -68,6 +70,7 @@ async function main() {
     status: 'submitted',
     created_at: '2026-03-23T10:01:00.000Z',
   })
+  assert.equal(isUnlockRequestLifecycleConsistent(submitted), true)
   const requestedView = deriveUnlockView({
     activeRequest: submitted,
     latestRejectedRequest: null,
@@ -88,6 +91,7 @@ async function main() {
     activeRequest: approvedPending,
     latestRejectedRequest: null,
   })
+  assert.equal(isUnlockRequestLifecycleConsistent(approvedPending), true)
   assert.equal(approvedView.currentState, 'approved')
   assert.equal(approvedView.approvedAt, '2026-03-23T10:02:00.000Z')
   assert.equal(approvedView.fulfilledAt, undefined)
@@ -118,6 +122,7 @@ async function main() {
     activeRequest: null,
     latestRejectedRequest: rejectedOld,
   })
+  assert.equal(isUnlockRequestLifecycleConsistent(rejectedOld), true)
   assert.equal(rejectedView.currentState, 'rejected')
   assert.equal(rejectedView.currentRequestId, 'req_rejected')
   assert.equal(rejectedView.rejectedAt, '2026-03-23T09:30:00.000Z')
@@ -134,6 +139,40 @@ async function main() {
   })
   assert.equal(resubmitView.currentState, 'requested')
   assert.equal(resubmitView.currentRequestId, 'req_submitted')
+
+  assert.equal(
+    isUnlockRequestLifecycleConsistent(
+      buildRow({
+        id: 'req_bad_submitted',
+        model_id: 'model_001',
+        status: 'submitted',
+        approved_at: '2026-03-23T10:02:00.000Z',
+      })
+    ),
+    false
+  )
+  assert.equal(
+    isUnlockRequestLifecycleConsistent(
+      buildRow({
+        id: 'req_bad_approved',
+        model_id: 'model_001',
+        status: 'approved',
+        approved_at: null,
+      })
+    ),
+    false
+  )
+  assert.equal(
+    isUnlockRequestLifecycleConsistent(
+      buildRow({
+        id: 'req_bad_rejected',
+        model_id: 'model_001',
+        status: 'rejected',
+        rejected_at: null,
+      })
+    ),
+    false
+  )
 
   assert.equal(
     mapUnlockRequestInsertErrorToHttpStatus({
