@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "easy3d - AI 3D 商品展示生成器",
-  description: "一张图，30 秒，生成你的 3D 商品展示",
+  title: "easy3d - 卖家商品素材包工作台",
+  description: "面向中小卖家的 Phase 1 商品素材包工作流，聚焦包袋与小皮具。",
 };
 
 export default function RootLayout({

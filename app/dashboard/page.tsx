@@ -54,15 +54,22 @@ function formatDate(value: string) {
 function getTaskState(task: TaskRecord) {
   const state = `${task.currentState ?? ''} ${task.unlockStatus ?? ''} ${task.status ?? ''}`.toLowerCase()
 
-  if (task.model_3d_url || state.includes('complete') || state.includes('success')) {
-    return { label: '已完成', tone: 'green' as StatusTone, icon: CheckCircle2 }
-  }
-
   if (state.includes('reject') || state.includes('fail')) {
     return { label: '需调整', tone: 'pink' as StatusTone, icon: Clock3 }
   }
 
-  if (state.includes('unlock') || state.includes('review') || task.thumbnail_url) {
+  if (state.includes('unlocked')) {
+    return { label: '已解锁', tone: 'green' as StatusTone, icon: CheckCircle2 }
+  }
+
+  if (
+    state.includes('approved') ||
+    state.includes('requested') ||
+    state.includes('preview_only') ||
+    state.includes('complete') ||
+    state.includes('success') ||
+    task.thumbnail_url
+  ) {
     return { label: '待解锁', tone: 'purple' as StatusTone, icon: Sparkles }
   }
 
@@ -122,7 +129,7 @@ export default function DashboardPage() {
     void loadTasks()
   }, [])
 
-  const completedCount = tasks.filter((task) => getTaskState(task).label === '已完成').length
+  const completedCount = tasks.filter((task) => getTaskState(task).label === '已解锁').length
   const previewCount = tasks.filter((task) => getTaskState(task).label === '待解锁').length
   const pendingCount = Math.max(tasks.length - completedCount - previewCount, 0)
   const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0
@@ -164,8 +171,8 @@ export default function DashboardPage() {
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           {[
             { label: '总任务', value: tasks.length, hint: '素材包请求 / 生成记录' },
-            { label: '待预览', value: pendingCount, hint: '等待补齐封面或卖点' },
-            { label: '已完成', value: completedCount, hint: '可直接下载或复用' },
+            { label: '待预览', value: pendingCount, hint: '等待生成预览或补齐卖点' },
+            { label: '已解锁', value: completedCount, hint: '完整素材包可继续交付' },
           ].map((item, index) => (
             <ScrollReveal key={item.label} variant="fadeUp" delay={index * 0.05}>
               <GlowingCard glowColor={index === 0 ? 'blue' : index === 1 ? 'purple' : 'green'} className="p-5">
@@ -312,20 +319,13 @@ export default function DashboardPage() {
                                       <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                   </Link>
-                                  {task.model_3d_url ? (
-                                    <a
-                                      href={task.model_3d_url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-300 hover:bg-white/5"
-                                    >
-                                      查看导出文件
-                                    </a>
-                                  ) : (
-                                    <span className="inline-flex items-center rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-500">
-                                      预览后显示导出入口
-                                    </span>
-                                  )}
+                                  <span className="inline-flex items-center rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-500">
+                                    {status.label === '已解锁'
+                                      ? '完整素材包已解锁，请回到结果页继续下载'
+                                      : status.label === '待解锁'
+                                        ? '先确认预览，再进入解锁交付'
+                                        : '生成完成后会在这里出现交付状态'}
+                                  </span>
                                 </div>
                               </div>
                             </div>

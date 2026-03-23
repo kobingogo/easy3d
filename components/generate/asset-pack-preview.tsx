@@ -47,6 +47,7 @@ interface AssetPackPreviewProps {
   isLoading?: boolean
   isReady?: boolean
   isDownloadReady?: boolean
+  isDownloading?: boolean
   onRequestUnlock?: () => void
   onDownloadFullPack?: () => void
 }
@@ -148,16 +149,23 @@ function getTimelineText(unlockView?: UnlockView | null) {
   return '先预览，再决定是否申请完整素材包'
 }
 
-function getPrimaryActionLabel(state: UnlockState) {
+function getPrimaryActionLabel(
+  state: UnlockState,
+  options: { isDownloadReady: boolean; isDownloading: boolean }
+) {
+  if (options.isDownloading) {
+    return '正在打包 ZIP'
+  }
+
   switch (state) {
     case 'requested':
       return '解锁申请已提交'
     case 'approved':
-      return '完整素材包接通中'
+      return '等待完整包交付'
     case 'rejected':
       return '重新提交解锁申请'
     case 'unlocked':
-      return '下载完整素材包（即将接通）'
+      return options.isDownloadReady ? '下载完整素材包 ZIP' : '完整素材包整理中'
     default:
       return '提交解锁申请'
   }
@@ -172,6 +180,7 @@ export function AssetPackPreview({
   isLoading = false,
   isReady = false,
   isDownloadReady = false,
+  isDownloading = false,
   onRequestUnlock,
   onDownloadFullPack,
 }: AssetPackPreviewProps) {
@@ -205,6 +214,7 @@ export function AssetPackPreview({
   }
 
   const primaryActionDisabled =
+    isDownloading ||
     currentState === 'requested' ||
     currentState === 'approved' ||
     ((currentState === 'preview_only' || currentState === 'rejected') && !onRequestUnlock) ||
@@ -245,12 +255,15 @@ export function AssetPackPreview({
               disabled={primaryActionDisabled}
               onClick={handlePrimaryAction}
             >
-              {getPrimaryActionLabel(currentState)}
+              {getPrimaryActionLabel(currentState, {
+                isDownloadReady,
+                isDownloading,
+              })}
               {!primaryActionDisabled && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
             {currentState === 'unlocked' && !isDownloadReady && (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                ZIP 下载路由尚未接通，入口已预留，不再退回 GLB 主按钮。
+                完整素材包仍在准备中，下载入口只会保留在这里，不再退回 GLB 主按钮。
               </p>
             )}
           </div>

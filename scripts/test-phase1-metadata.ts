@@ -20,15 +20,15 @@ async function main() {
       reasoningSummary: 'summary',
     },
     manifest: {
-      filename: 'asset-pack-manifest.json',
+      filename: 'manifest/asset-pack-manifest.json',
       model: {
         downloadUrl: 'https://example.com/model.glb',
-        filename: 'model.glb',
+        filename: 'model/model.glb',
       },
       assets: [
         {
           platform: 'taobao',
-          filename: 'taobao-800x800.jpg',
+          filename: 'assets/taobao-main.jpg',
           previewUrl: 'https://example.com/preview.jpg',
           downloadUrl: '/api/models/model_001/asset-pack-assets/taobao',
           mimeType: 'image/jpeg',
@@ -38,13 +38,13 @@ async function main() {
       ],
       copyFiles: [
         {
-          filename: 'taobao-copy.md',
+          filename: 'copy/taobao-listing.md',
           content: '# t',
           mimeType: 'text/markdown',
         },
       ],
       strategyFile: {
-        filename: 'strategy-summary.json',
+        filename: 'strategy/strategy-summary.json',
         content: '{"ok":true}',
         mimeType: 'application/json',
       },

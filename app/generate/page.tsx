@@ -16,6 +16,8 @@ import { StepProgress, type Step, type StepStatus } from '@/components/ui/step-p
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MultiViewUploadZone, type MultiViewImage } from '@/components/upload/MultiViewUploadZone'
 import { UploadZone } from '@/components/upload/UploadZone'
+import type { Phase1AssetPackSnapshot } from '@/lib/seller-workflow/asset-pack'
+import { downloadPhase1AssetPackZip } from '@/lib/seller-workflow/download-asset-pack'
 
 type GenerationStatus = 'idle' | 'uploading' | 'generating' | 'polling' | 'completed' | 'failed'
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -59,19 +61,7 @@ interface PersistedModelMetadata {
   }
   assetPackPreviewReady?: boolean
   assetPackSnapshotStatus?: 'idle' | 'materializing'
-  assetPackSnapshot?: {
-    manifest?: {
-      assets?: Array<{
-        platform: Platform
-        filename: string
-        previewUrl: string
-        downloadUrl: string
-        mimeType: string
-        width: number
-        height: number
-      }>
-    }
-  }
+  assetPackSnapshot?: Phase1AssetPackSnapshot
   materializationFailedAt?: string
   materializationError?: string
 }
@@ -109,6 +99,11 @@ interface UnlockRequestState {
   error: string | null
 }
 
+interface DownloadState {
+  status: 'idle' | 'downloading' | 'error'
+  error: string | null
+}
+
 interface GenerationSession {
   runId: number
   taskId: string | null
@@ -138,6 +133,11 @@ const initialUnlockRequestState: UnlockRequestState = {
   error: null,
 }
 
+const initialDownloadState: DownloadState = {
+  status: 'idle',
+  error: null,
+}
+
 export default function GeneratePage() {
   const [uploadMode, setUploadMode] = useState<UploadMode>('single')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -147,6 +147,7 @@ export default function GeneratePage() {
   const [generation, setGeneration] = useState<GenerationState>(initialGenerationState)
   const [modelDetailState, setModelDetailState] = useState<ModelDetailState>(initialModelDetailState)
   const [unlockRequestState, setUnlockRequestState] = useState<UnlockRequestState>(initialUnlockRequestState)
+  const [downloadState, setDownloadState] = useState<DownloadState>(initialDownloadState)
   const [multiViewZoneKey, setMultiViewZoneKey] = useState(0)
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -248,6 +249,7 @@ export default function GeneratePage() {
     setGeneration(initialGenerationState)
     setModelDetailState(initialModelDetailState)
     setUnlockRequestState(initialUnlockRequestState)
+    setDownloadState(initialDownloadState)
     setShowCelebration(false)
   }, [clearRuntimeTimers])
 
@@ -578,7 +580,7 @@ export default function GeneratePage() {
         error: error?.message || '生成失败，请重试',
       }))
     }
-  }, [pollStatus, uploadedFile])
+  }, [isCurrentGenerationSession, pollStatus, uploadedFile])
 
   const handleMultiviewGenerate = useCallback(async () => {
     if (multiViewImages.length < 2) return
@@ -657,7 +659,7 @@ export default function GeneratePage() {
         error: error?.message || '生成失败，请重试',
       }))
     }
-  }, [multiViewImages, pollStatus])
+  }, [isCurrentGenerationSession, multiViewImages, pollStatus])
 
   const handleReset = useCallback(() => {
     resetGeneration()
@@ -707,11 +709,13 @@ export default function GeneratePage() {
   const resolvedModelUrl = modelDetailState.model?.model_3d_url || generation.modelUrl
   const resolvedThumbnailUrl =
     modelDetailState.model?.thumbnail_url || generation.thumbnailUrl || previewUrl
+  const assetPackSnapshot = modelDetailState.model?.metadata?.assetPackSnapshot || null
   const platformAssets = modelDetailState.model?.metadata?.assetPackSnapshot?.manifest?.assets || []
   const assetPackReady = Boolean(
-    modelDetailState.model?.metadata?.assetPackPreviewReady &&
-      modelDetailState.model?.metadata?.assetPackSnapshot
+    modelDetailState.model?.metadata?.assetPackPreviewReady && assetPackSnapshot
   )
+  const canDownloadFullPack =
+    currentUnlockState === 'unlocked' && assetPackReady && Boolean(currentModelId) && Boolean(assetPackSnapshot)
   const canOpenUnlockForm = generation.status === 'completed' && assetPackReady && Boolean(currentModelId)
   const canRequestUnlock =
     canOpenUnlockForm && (currentUnlockState === 'preview_only' || currentUnlockState === 'rejected')
@@ -722,6 +726,42 @@ export default function GeneratePage() {
 
     unlockFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [canOpenUnlockForm])
+
+  const handleDownloadFullPack = useCallback(async () => {
+    if (!currentModelId || !assetPackSnapshot || !canDownloadFullPack) {
+      return
+    }
+
+    setDownloadState({
+      status: 'downloading',
+      error: null,
+    })
+
+    try {
+      await downloadPhase1AssetPackZip({
+        modelId: currentModelId,
+        snapshot: {
+          ...assetPackSnapshot,
+          manifest: {
+            ...assetPackSnapshot.manifest,
+            model: {
+              ...assetPackSnapshot.manifest.model,
+              downloadUrl: resolvedModelUrl || assetPackSnapshot.manifest.model.downloadUrl,
+            },
+          },
+        },
+      })
+      setDownloadState({
+        status: 'idle',
+        error: null,
+      })
+    } catch (error: any) {
+      setDownloadState({
+        status: 'error',
+        error: error?.message || '完整素材包下载失败，请稍后再试。',
+      })
+    }
+  }, [assetPackSnapshot, canDownloadFullPack, currentModelId, resolvedModelUrl])
 
   const getStatusBadge = () => {
     switch (generation.status) {
@@ -804,17 +844,26 @@ export default function GeneratePage() {
 
     if (isProcessing || generation.status === 'completed' || Boolean(currentModelId)) {
       return (
-        <AssetPackPreview
-          previewFallbackUrl={resolvedThumbnailUrl}
-          platformAssets={platformAssets}
-          copySummary={modelDetailState.model?.copySummary}
-          strategySummary={modelDetailState.model?.strategySummary}
-          unlockView={currentUnlockView}
-          isLoading={isProcessing || modelDetailState.status === 'loading'}
-          isReady={assetPackReady}
-          isDownloadReady={false}
-          onRequestUnlock={canOpenUnlockForm ? handleOpenUnlockForm : undefined}
-        />
+        <div className="space-y-4">
+          <AssetPackPreview
+            previewFallbackUrl={resolvedThumbnailUrl}
+            platformAssets={platformAssets}
+            copySummary={modelDetailState.model?.copySummary}
+            strategySummary={modelDetailState.model?.strategySummary}
+            unlockView={currentUnlockView}
+            isLoading={isProcessing || modelDetailState.status === 'loading'}
+            isReady={assetPackReady}
+            isDownloadReady={canDownloadFullPack}
+            isDownloading={downloadState.status === 'downloading'}
+            onRequestUnlock={canOpenUnlockForm ? handleOpenUnlockForm : undefined}
+            onDownloadFullPack={canDownloadFullPack ? handleDownloadFullPack : undefined}
+          />
+          {downloadState.error && (
+            <div className="rounded-2xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {downloadState.error}
+            </div>
+          )}
+        </div>
       )
     }
 

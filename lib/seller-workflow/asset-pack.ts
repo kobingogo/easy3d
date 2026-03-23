@@ -5,13 +5,48 @@ import { getPhase1Preset } from './presets'
 import type { Phase1Category, Phase1Preset } from './types'
 
 type AssetMimeType = 'image/jpeg' | 'image/png'
+type CopyMimeType = 'text/plain' | 'text/markdown' | 'application/json'
+type Phase1ZipEntryPath =
+  | 'assets/taobao-main.jpg'
+  | 'assets/xiaohongshu-cover.jpg'
+  | 'assets/douyin-vertical.jpg'
+  | 'copy/taobao-listing.md'
+  | 'copy/xiaohongshu-post.md'
+  | 'copy/douyin-script.md'
+  | 'strategy/strategy-summary.json'
+  | 'manifest/asset-pack-manifest.json'
+  | 'model/model.glb'
+
+export const PHASE1_ASSET_PACK_ENTRY_ORDER: Phase1ZipEntryPath[] = [
+  'assets/taobao-main.jpg',
+  'assets/xiaohongshu-cover.jpg',
+  'assets/douyin-vertical.jpg',
+  'copy/taobao-listing.md',
+  'copy/xiaohongshu-post.md',
+  'copy/douyin-script.md',
+  'strategy/strategy-summary.json',
+  'manifest/asset-pack-manifest.json',
+  'model/model.glb',
+]
+
+const PLATFORM_ASSET_FILENAMES: Record<Platform, Phase1ZipEntryPath> = {
+  taobao: 'assets/taobao-main.jpg',
+  xiaohongshu: 'assets/xiaohongshu-cover.jpg',
+  douyin: 'assets/douyin-vertical.jpg',
+}
+
+const PLATFORM_COPY_FILENAMES: Record<Platform, Phase1ZipEntryPath> = {
+  taobao: 'copy/taobao-listing.md',
+  xiaohongshu: 'copy/xiaohongshu-post.md',
+  douyin: 'copy/douyin-script.md',
+}
 
 export interface AssetPackManifest {
-  filename: 'asset-pack-manifest.json'
-  model: { downloadUrl: string; filename: 'model.glb' }
+  filename: 'manifest/asset-pack-manifest.json'
+  model: { downloadUrl: string; filename: 'model/model.glb' }
   assets: Array<{
     platform: Platform
-    filename: string
+    filename: Phase1ZipEntryPath
     previewUrl: string
     downloadUrl: string
     mimeType: AssetMimeType
@@ -19,12 +54,12 @@ export interface AssetPackManifest {
     height: number
   }>
   copyFiles: Array<{
-    filename: string
+    filename: Phase1ZipEntryPath
     content: string
-    mimeType: 'text/plain' | 'text/markdown' | 'application/json'
+    mimeType: CopyMimeType
   }>
   strategyFile: {
-    filename: 'strategy-summary.json'
+    filename: 'strategy/strategy-summary.json'
     content: string
     mimeType: 'application/json'
   }
@@ -64,12 +99,20 @@ export interface Phase1AssetPack {
     width: number
     height: number
     label: string
-    filename: string
+    filename: Phase1ZipEntryPath
     previewUrl: string
     downloadUrl: string
     mimeType: AssetMimeType
   }>
   copy: Phase1AssetPackCopy
+}
+
+export interface Phase1AssetPackZipEntry {
+  path: Phase1ZipEntryPath
+  mimeType: AssetMimeType | CopyMimeType | 'model/gltf-binary'
+  kind: 'remote' | 'text' | 'json'
+  downloadUrl?: string
+  content?: string
 }
 
 export interface BuildPhase1AssetPackInput {
@@ -201,7 +244,7 @@ export async function materializePhase1AssetPackSnapshot(
     keyFeatures: input.analysisSummary.keyFeatures
   })
 
-  const manifest = buildManifest({
+  const manifest = buildPhase1AssetPackManifest({
     modelId: input.modelId,
     modelDownloadUrl: input.modelDownloadUrl,
     thumbnailUrl: input.sourceImageUrl,
@@ -218,7 +261,7 @@ export async function materializePhase1AssetPackSnapshot(
   }
 }
 
-function buildManifest(input: {
+export function buildPhase1AssetPackManifest(input: {
   modelId: string
   modelDownloadUrl: string
   thumbnailUrl: string
@@ -228,12 +271,11 @@ function buildManifest(input: {
 }): AssetPackManifest {
   const assets = input.preset.targetPlatforms.map((platform) => {
     const spec = getPlatformSpec(platform)
-    const extension = spec.format === 'png' ? 'png' : 'jpg'
     const mimeType: AssetMimeType =
       spec.format === 'png' ? 'image/png' : 'image/jpeg'
     return {
       platform,
-      filename: `${platform}-${spec.width}x${spec.height}.${extension}`,
+      filename: PLATFORM_ASSET_FILENAMES[platform],
       previewUrl: input.thumbnailUrl,
       downloadUrl: `/api/models/${input.modelId}/asset-pack-assets/${platform}`,
       mimeType,
@@ -243,35 +285,72 @@ function buildManifest(input: {
   })
 
   return {
-    filename: 'asset-pack-manifest.json',
+    filename: 'manifest/asset-pack-manifest.json',
     model: {
       downloadUrl: input.modelDownloadUrl,
-      filename: 'model.glb'
+      filename: 'model/model.glb'
     },
     assets,
     copyFiles: [
       {
-        filename: 'taobao-copy.md',
+        filename: PLATFORM_COPY_FILENAMES.taobao,
         content: serializeTaobaoCopy(input.copy.taobao),
         mimeType: 'text/markdown'
       },
       {
-        filename: 'xiaohongshu-copy.md',
+        filename: PLATFORM_COPY_FILENAMES.xiaohongshu,
         content: serializeXiaohongshuCopy(input.copy.xiaohongshu),
         mimeType: 'text/markdown'
       },
       {
-        filename: 'douyin-copy.md',
+        filename: PLATFORM_COPY_FILENAMES.douyin,
         content: serializeDouyinCopy(input.copy.douyin),
         mimeType: 'text/markdown'
       }
     ],
     strategyFile: {
-      filename: 'strategy-summary.json',
+      filename: 'strategy/strategy-summary.json',
       content: JSON.stringify(input.strategy, null, 2),
       mimeType: 'application/json'
     }
   }
+}
+
+export function buildPhase1AssetPackZipEntries(
+  snapshot: Phase1AssetPackSnapshot
+): Phase1AssetPackZipEntry[] {
+  return [
+    ...snapshot.manifest.assets.map((asset) => ({
+      path: asset.filename,
+      mimeType: asset.mimeType,
+      kind: 'remote' as const,
+      downloadUrl: asset.downloadUrl,
+    })),
+    ...snapshot.manifest.copyFiles.map((file) => ({
+      path: file.filename,
+      mimeType: file.mimeType,
+      kind: 'text' as const,
+      content: file.content,
+    })),
+    {
+      path: snapshot.manifest.strategyFile.filename,
+      mimeType: snapshot.manifest.strategyFile.mimeType,
+      kind: 'json' as const,
+      content: snapshot.manifest.strategyFile.content,
+    },
+    {
+      path: snapshot.manifest.filename,
+      mimeType: 'application/json' as const,
+      kind: 'json' as const,
+      content: JSON.stringify(snapshot.manifest, null, 2),
+    },
+    {
+      path: snapshot.manifest.model.filename,
+      mimeType: 'model/gltf-binary' as const,
+      kind: 'remote' as const,
+      downloadUrl: snapshot.manifest.model.downloadUrl,
+    },
+  ]
 }
 
 function getPreferredStyle(platform: Platform): 'casual' | 'professional' | 'trendy' {

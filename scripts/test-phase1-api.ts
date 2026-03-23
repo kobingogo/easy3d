@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 
 import { POST as generateSmartPost } from '../app/api/generate-smart/route'
 import { GET as modelsGet } from '../app/api/models/route'
+import { GET as assetPackAssetGet } from '../app/api/models/[id]/asset-pack-assets/[platform]/route'
 import { POST as unlockRequestsPost } from '../app/api/unlock-requests/route'
 import { GET as tripoStatusGet } from '../app/api/tripo/status/[taskId]/route'
 
@@ -363,15 +364,25 @@ function sampleSnapshot() {
       reasoningSummary: '摘要',
     },
     manifest: {
-      filename: 'asset-pack-manifest.json' as const,
+      filename: 'manifest/asset-pack-manifest.json' as const,
       model: {
         downloadUrl: 'https://cdn.example.com/model.glb',
-        filename: 'model.glb' as const,
+        filename: 'model/model.glb' as const,
       },
-      assets: [],
+      assets: [
+        {
+          platform: 'taobao' as const,
+          filename: 'assets/taobao-main.jpg',
+          previewUrl: 'https://cdn.example.com/taobao.jpg',
+          downloadUrl: '/api/models/model_1001/asset-pack-assets/taobao',
+          mimeType: 'image/jpeg' as const,
+          width: 800,
+          height: 800,
+        },
+      ],
       copyFiles: [],
       strategyFile: {
-        filename: 'strategy-summary.json' as const,
+        filename: 'strategy/strategy-summary.json' as const,
         content: '{"ok":true}',
         mimeType: 'application/json' as const,
       },
@@ -402,6 +413,13 @@ function getUnlockTestables() {
 
 function getTripoStatusTestables() {
   return (tripoStatusGet as any).__testables as {
+    setTestOverrides: (overrides: Dict) => void
+    resetTestOverrides: () => void
+  }
+}
+
+function getAssetRouteTestables() {
+  return (assetPackAssetGet as any).__testables as {
     setTestOverrides: (overrides: Dict) => void
     resetTestOverrides: () => void
   }
@@ -583,6 +601,54 @@ async function main() {
         })
       )
       assert.equal(conflictResponse.status, 409)
+    } finally {
+      hooks.resetTestOverrides()
+    }
+  })
+
+  await runTest('asset-pack-assets GET proxies persisted platform asset', async () => {
+    const fakeSupabase = new FakeSupabaseClient({
+      models: [
+        {
+          id: 'model_1001',
+          status: 'completed',
+          model_3d_url: 'https://cdn.example.com/model.glb',
+          thumbnail_url: 'https://cdn.example.com/thumb.jpg',
+          original_image_url: 'https://example.com/source.jpg',
+          trip_task_id: 'task_1001',
+          metadata: phase1Metadata({
+            assetPackPreviewReady: true,
+            assetPackSnapshot: sampleSnapshot(),
+          }),
+          created_at: '2026-03-23T10:00:00.000Z',
+          updated_at: '2026-03-23T10:00:00.000Z',
+        },
+      ],
+    })
+
+    const hooks = getAssetRouteTestables()
+    hooks.setTestOverrides({
+      createClient: async () => fakeSupabase,
+      fetchImpl: async () =>
+        new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: {
+            'content-type': 'image/jpeg',
+          },
+        }),
+    })
+
+    try {
+      const response = await assetPackAssetGet(
+        new NextRequest('http://localhost/api/models/model_1001/asset-pack-assets/taobao'),
+        {
+          params: Promise.resolve({ id: 'model_1001', platform: 'taobao' }),
+        } as any
+      )
+
+      assert.equal(response.status, 200)
+      assert.equal(response.headers.get('content-type'), 'image/jpeg')
+      assert.match(response.headers.get('content-disposition') || '', /taobao-main\.jpg/)
     } finally {
       hooks.resetTestOverrides()
     }

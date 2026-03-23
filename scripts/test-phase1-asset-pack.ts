@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import {
+  buildPhase1AssetPackManifest,
   buildPhase1AssetPack,
+  PHASE1_ASSET_PACK_ENTRY_ORDER,
   type Phase1AssetPackSnapshot,
 } from '../lib/seller-workflow/asset-pack';
+import { getPhase1Preset } from '../lib/seller-workflow/presets';
 
 async function main() {
   const modelId = 'model_abc123';
@@ -36,15 +39,15 @@ async function main() {
       reasoningSummary: '以通勤转化为目标，统一三平台叙事。',
     },
     manifest: {
-      filename: 'asset-pack-manifest.json',
+      filename: 'manifest/asset-pack-manifest.json',
       model: {
         downloadUrl: 'https://fixture.example.com/model.glb',
-        filename: 'model.glb',
+        filename: 'model/model.glb',
       },
       assets: [
         {
           platform: 'taobao',
-          filename: 'taobao-800x800.jpg',
+          filename: 'assets/taobao-main.jpg',
           previewUrl: 'https://fixture.example.com/preview.jpg',
           downloadUrl: '/api/models/model_abc123/asset-pack-assets/taobao',
           mimeType: 'image/jpeg',
@@ -53,7 +56,7 @@ async function main() {
         },
         {
           platform: 'xiaohongshu',
-          filename: 'xiaohongshu-1242x1660.jpg',
+          filename: 'assets/xiaohongshu-cover.jpg',
           previewUrl: 'https://fixture.example.com/preview.jpg',
           downloadUrl: '/api/models/model_abc123/asset-pack-assets/xiaohongshu',
           mimeType: 'image/jpeg',
@@ -62,7 +65,7 @@ async function main() {
         },
         {
           platform: 'douyin',
-          filename: 'douyin-1080x1920.jpg',
+          filename: 'assets/douyin-vertical.jpg',
           previewUrl: 'https://fixture.example.com/preview.jpg',
           downloadUrl: '/api/models/model_abc123/asset-pack-assets/douyin',
           mimeType: 'image/jpeg',
@@ -72,23 +75,23 @@ async function main() {
       ],
       copyFiles: [
         {
-          filename: 'taobao-copy.md',
+          filename: 'copy/taobao-listing.md',
           content: '# fixture taobao',
           mimeType: 'text/markdown',
         },
         {
-          filename: 'xiaohongshu-copy.md',
+          filename: 'copy/xiaohongshu-post.md',
           content: '# fixture xiaohongshu',
           mimeType: 'text/markdown',
         },
         {
-          filename: 'douyin-copy.md',
+          filename: 'copy/douyin-script.md',
           content: '# fixture douyin',
           mimeType: 'text/markdown',
         },
       ],
       strategyFile: {
-        filename: 'strategy-summary.json',
+        filename: 'strategy/strategy-summary.json',
         content: '{"from":"fixture"}',
         mimeType: 'application/json',
       },
@@ -124,7 +127,7 @@ async function main() {
   assert.ok(pack.platformAssets[0]?.downloadUrl, 'missing platform asset download url');
   assert.equal(
     pack.manifest.filename,
-    'asset-pack-manifest.json',
+    'manifest/asset-pack-manifest.json',
     'missing asset-pack manifest'
   );
 
@@ -155,6 +158,41 @@ async function main() {
     pack.snapshot,
     snapshotFixture,
     'pack.snapshot should preserve the canonical snapshot shape'
+  );
+
+  const generatedManifest = buildPhase1AssetPackManifest({
+    modelId,
+    modelDownloadUrl: 'https://fixture.example.com/model.glb',
+    thumbnailUrl: 'https://fixture.example.com/preview.jpg',
+    preset: getPhase1Preset('bags'),
+    copy: snapshotFixture.copy,
+    strategy: snapshotFixture.strategy,
+  });
+
+  assert.deepEqual(PHASE1_ASSET_PACK_ENTRY_ORDER, [
+    'assets/taobao-main.jpg',
+    'assets/xiaohongshu-cover.jpg',
+    'assets/douyin-vertical.jpg',
+    'copy/taobao-listing.md',
+    'copy/xiaohongshu-post.md',
+    'copy/douyin-script.md',
+    'strategy/strategy-summary.json',
+    'manifest/asset-pack-manifest.json',
+    'model/model.glb',
+  ]);
+  assert.equal(generatedManifest.filename, 'manifest/asset-pack-manifest.json');
+  assert.equal(generatedManifest.model.filename, 'model/model.glb');
+  assert.deepEqual(
+    generatedManifest.assets.map((asset) => asset.filename),
+    PHASE1_ASSET_PACK_ENTRY_ORDER.slice(0, 3)
+  );
+  assert.deepEqual(
+    generatedManifest.copyFiles.map((file) => file.filename),
+    PHASE1_ASSET_PACK_ENTRY_ORDER.slice(3, 6)
+  );
+  assert.equal(
+    generatedManifest.strategyFile.filename,
+    'strategy/strategy-summary.json'
   );
 
   console.log('[test-phase1-asset-pack] PASS');
