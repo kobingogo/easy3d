@@ -51,6 +51,8 @@ export interface Database {
           status: string
           quality: string | null
           trip_task_id: string | null
+          // Phase 1 seller-workflow metadata contract:
+          // lib/seller-workflow/model-metadata.ts
           metadata: Json | null
           created_at: string
           updated_at: string
@@ -78,6 +80,44 @@ export interface Database {
           quality?: string | null
           trip_task_id?: string | null
           metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      unlock_requests: {
+        Row: {
+          id: string
+          model_id: string
+          status: 'submitted' | 'approved' | 'rejected'
+          contact_name: string
+          contact_channel: 'wechat' | 'phone' | 'xiaohongshu'
+          contact_value: string
+          note: string | null
+          fulfilled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          model_id: string
+          status?: 'submitted' | 'approved' | 'rejected'
+          contact_name: string
+          contact_channel: 'wechat' | 'phone' | 'xiaohongshu'
+          contact_value: string
+          note?: string | null
+          fulfilled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          model_id?: string
+          status?: 'submitted' | 'approved' | 'rejected'
+          contact_name?: string
+          contact_channel?: 'wechat' | 'phone' | 'xiaohongshu'
+          contact_value?: string
+          note?: string | null
+          fulfilled_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -123,4 +163,5 @@ export interface Database {
 
 export type User = Database['public']['Tables']['users']['Row']
 export type Model = Database['public']['Tables']['models']['Row']
+export type UnlockRequest = Database['public']['Tables']['unlock_requests']['Row']
 export type UsageLog = Database['public']['Tables']['usage_logs']['Row']
