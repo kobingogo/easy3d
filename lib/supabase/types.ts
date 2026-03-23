@@ -93,6 +93,8 @@ export interface Database {
           contact_channel: 'wechat' | 'phone' | 'xiaohongshu'
           contact_value: string
           note: string | null
+          approved_at: string | null
+          rejected_at: string | null
           fulfilled_at: string | null
           created_at: string
           updated_at: string
@@ -105,6 +107,8 @@ export interface Database {
           contact_channel: 'wechat' | 'phone' | 'xiaohongshu'
           contact_value: string
           note?: string | null
+          approved_at?: string | null
+          rejected_at?: string | null
           fulfilled_at?: string | null
           created_at?: string
           updated_at?: string
@@ -117,6 +121,8 @@ export interface Database {
           contact_channel?: 'wechat' | 'phone' | 'xiaohongshu'
           contact_value?: string
           note?: string | null
+          approved_at?: string | null
+          rejected_at?: string | null
           fulfilled_at?: string | null
           created_at?: string
           updated_at?: string

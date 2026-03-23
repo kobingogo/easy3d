@@ -1,7 +1,56 @@
 import assert from 'node:assert/strict'
 import { buildPhase1ModelMetadata } from '../lib/seller-workflow/model-metadata'
+import type { Phase1AssetPackSnapshot } from '../lib/seller-workflow/asset-pack'
 
 async function main() {
+  const snapshotFixture: Phase1AssetPackSnapshot = {
+    version: 1,
+    copy: {
+      taobao: { title: 't', bullets: ['b1'] },
+      xiaohongshu: { title: 'x', content: 'c', tags: ['#x'] },
+      douyin: { hook: 'h', script: 's', tags: ['#d'] },
+    },
+    strategy: {
+      recommendedPlatform: 'taobao',
+      heroAngle: 'hero',
+      styleDirection: 'style',
+      featureFocus: ['f1'],
+      materialFocus: ['m1'],
+      marketingHook: 'hook',
+      reasoningSummary: 'summary',
+    },
+    manifest: {
+      filename: 'asset-pack-manifest.json',
+      model: {
+        downloadUrl: 'https://example.com/model.glb',
+        filename: 'model.glb',
+      },
+      assets: [
+        {
+          platform: 'taobao',
+          filename: 'taobao-800x800.jpg',
+          previewUrl: 'https://example.com/preview.jpg',
+          downloadUrl: '/api/models/model_001/asset-pack-assets/taobao',
+          mimeType: 'image/jpeg',
+          width: 800,
+          height: 800,
+        },
+      ],
+      copyFiles: [
+        {
+          filename: 'taobao-copy.md',
+          content: '# t',
+          mimeType: 'text/markdown',
+        },
+      ],
+      strategyFile: {
+        filename: 'strategy-summary.json',
+        content: '{"ok":true}',
+        mimeType: 'application/json',
+      },
+    },
+  }
+
   const metadata = buildPhase1ModelMetadata({
     category: 'bags',
     presetKey: 'bag-studio-phase1',
@@ -36,6 +85,63 @@ async function main() {
   assert.equal(materializing.uploadMode, 'multiview')
   assert.equal(materializing.assetPackSnapshotStatus, 'materializing')
   assert.deepEqual(materializing.analysisSummary, {})
+
+  const withSnapshotDefaultPreview = buildPhase1ModelMetadata({
+    category: 'bags',
+    presetKey: 'bag-studio-phase1',
+    uploadMode: 'single',
+    assetPackSnapshot: snapshotFixture,
+  })
+
+  assert.equal(
+    withSnapshotDefaultPreview.assetPackPreviewReady,
+    false,
+    'assetPackPreviewReady must stay false by default even when snapshot exists'
+  )
+
+  const explicitPreviewReady = buildPhase1ModelMetadata({
+    category: 'bags',
+    presetKey: 'bag-studio-phase1',
+    uploadMode: 'single',
+    assetPackSnapshot: snapshotFixture,
+    assetPackPreviewReady: true,
+  })
+  assert.equal(explicitPreviewReady.assetPackPreviewReady, true)
+
+  assert.throws(
+    () =>
+      buildPhase1ModelMetadata({
+        category: 'bags',
+        presetKey: 'bag-studio-phase1',
+        uploadMode: 'single',
+        assetPackPreviewReady: true,
+      }),
+    /assetPackSnapshot is required when assetPackPreviewReady is true/
+  )
+
+  assert.throws(
+    () =>
+      buildPhase1ModelMetadata({
+        category: 'bags',
+        presetKey: 'bag-studio-phase1',
+        uploadMode: 'single',
+        assetPackSnapshotStatus: 'materializing',
+        assetPackSnapshot: snapshotFixture,
+      }),
+    /assetPackSnapshotStatus=materializing cannot include assetPackSnapshot/
+  )
+
+  assert.throws(
+    () =>
+      buildPhase1ModelMetadata({
+        category: 'bags',
+        presetKey: 'bag-studio-phase1',
+        uploadMode: 'single',
+        assetPackSnapshotStatus: 'materializing',
+        assetPackPreviewReady: true,
+      }),
+    /assetPackSnapshotStatus=materializing cannot be preview ready/
+  )
 
   console.log('[test-phase1-metadata] PASS')
 }

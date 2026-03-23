@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS public.unlock_requests (
   contact_channel TEXT NOT NULL,
   contact_value TEXT NOT NULL,
   note TEXT,
+  approved_at TIMESTAMPTZ,
+  rejected_at TIMESTAMPTZ,
   fulfilled_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -16,9 +18,45 @@ CREATE TABLE IF NOT EXISTS public.unlock_requests (
     CHECK (status IN ('submitted', 'approved', 'rejected')),
   CONSTRAINT unlock_requests_contact_channel_check
     CHECK (contact_channel IN ('wechat', 'phone', 'xiaohongshu')),
+  CONSTRAINT unlock_requests_approved_requires_status
+    CHECK (approved_at IS NULL OR status = 'approved'),
+  CONSTRAINT unlock_requests_rejected_requires_status
+    CHECK (rejected_at IS NULL OR status = 'rejected'),
   CONSTRAINT unlock_requests_fulfilled_requires_approved
     CHECK (fulfilled_at IS NULL OR status = 'approved')
 );
+
+ALTER TABLE public.unlock_requests
+ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMPTZ;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'unlock_requests_approved_requires_status'
+  ) THEN
+    ALTER TABLE public.unlock_requests
+    ADD CONSTRAINT unlock_requests_approved_requires_status
+    CHECK (approved_at IS NULL OR status = 'approved');
+  END IF;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'unlock_requests_rejected_requires_status'
+  ) THEN
+    ALTER TABLE public.unlock_requests
+    ADD CONSTRAINT unlock_requests_rejected_requires_status
+    CHECK (rejected_at IS NULL OR status = 'rejected');
+  END IF;
+END;
+$$;
 
 CREATE INDEX IF NOT EXISTS idx_unlock_requests_model_id
 ON public.unlock_requests(model_id);

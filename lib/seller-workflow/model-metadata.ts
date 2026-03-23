@@ -37,6 +37,28 @@ export interface BuildPhase1ModelMetadataInput {
 export function buildPhase1ModelMetadata(
   input: BuildPhase1ModelMetadataInput
 ): Phase1ModelMetadata {
+  const assetPackPreviewReady = input.assetPackPreviewReady ?? false
+  const assetPackSnapshotStatus = input.assetPackSnapshotStatus ?? 'idle'
+  const assetPackSnapshot = input.assetPackSnapshot
+
+  if (assetPackSnapshotStatus === 'materializing' && assetPackPreviewReady) {
+    throw new Error(
+      'assetPackSnapshotStatus=materializing cannot be preview ready'
+    )
+  }
+
+  if (assetPackSnapshotStatus === 'materializing' && assetPackSnapshot) {
+    throw new Error(
+      'assetPackSnapshotStatus=materializing cannot include assetPackSnapshot'
+    )
+  }
+
+  if (assetPackPreviewReady && !assetPackSnapshot) {
+    throw new Error(
+      'assetPackSnapshot is required when assetPackPreviewReady is true'
+    )
+  }
+
   return {
     workflowType: 'seller_asset_pack_phase1',
     category: input.category,
@@ -44,10 +66,9 @@ export function buildPhase1ModelMetadata(
     uploadMode: input.uploadMode,
     unlockStatus: input.unlockStatus ?? 'preview_only',
     analysisSummary: normalizeAnalysisSummary(input.analysisSummary),
-    assetPackPreviewReady:
-      input.assetPackPreviewReady ?? Boolean(input.assetPackSnapshot),
-    assetPackSnapshotStatus: input.assetPackSnapshotStatus ?? 'idle',
-    assetPackSnapshot: input.assetPackSnapshot,
+    assetPackPreviewReady,
+    assetPackSnapshotStatus,
+    assetPackSnapshot,
   }
 }
 

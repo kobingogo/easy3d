@@ -3,10 +3,13 @@ import type { UnlockRequestRow, UnlockRequestView } from './unlock-request'
 
 type ActiveRequest = Pick<
   UnlockRequestRow,
-  'id' | 'status' | 'created_at' | 'fulfilled_at'
+  'id' | 'status' | 'created_at' | 'approved_at' | 'fulfilled_at'
 >
 
-type RejectedRequest = Pick<UnlockRequestRow, 'id' | 'status' | 'created_at'>
+type RejectedRequest = Pick<
+  UnlockRequestRow,
+  'id' | 'status' | 'created_at' | 'rejected_at'
+>
 
 export interface DeriveUnlockViewInput {
   activeRequest: ActiveRequest | null
@@ -33,7 +36,7 @@ export function deriveUnlockView(input: DeriveUnlockViewInput): UnlockRequestVie
           currentState: 'unlocked',
           currentRequestId: active.id,
           latestRequestStatus: 'approved',
-          approvedAt: active.created_at,
+          approvedAt: active.approved_at ?? undefined,
           fulfilledAt: active.fulfilled_at,
         }
       }
@@ -42,7 +45,7 @@ export function deriveUnlockView(input: DeriveUnlockViewInput): UnlockRequestVie
         currentState: 'approved',
         currentRequestId: active.id,
         latestRequestStatus: 'approved',
-        approvedAt: active.created_at,
+        approvedAt: active.approved_at ?? undefined,
       }
     }
   }
@@ -53,7 +56,7 @@ export function deriveUnlockView(input: DeriveUnlockViewInput): UnlockRequestVie
       currentState: 'rejected',
       currentRequestId: latestRejected.id,
       latestRequestStatus: 'rejected',
-      rejectedAt: latestRejected.created_at,
+      rejectedAt: latestRejected.rejected_at ?? undefined,
     }
   }
 

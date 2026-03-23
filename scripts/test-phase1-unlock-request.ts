@@ -18,6 +18,8 @@ function buildRow(input: Partial<UnlockRequestRow> & Pick<UnlockRequestRow, 'id'
     contact_channel: input.contact_channel ?? 'wechat',
     contact_value: input.contact_value ?? 'alice_wechat',
     note: input.note ?? null,
+    approved_at: input.approved_at ?? null,
+    rejected_at: input.rejected_at ?? null,
     fulfilled_at: input.fulfilled_at ?? null,
     created_at: input.created_at ?? '2026-03-23T10:00:00.000Z',
     updated_at: input.updated_at ?? '2026-03-23T10:00:00.000Z',
@@ -48,6 +50,8 @@ async function main() {
     contact_channel: 'wechat',
     contact_value: 'alice_wechat',
     note: '请联系我',
+    approved_at: null,
+    rejected_at: null,
   })
 
   const previewOnly = deriveUnlockView({
@@ -76,8 +80,9 @@ async function main() {
     id: 'req_approved',
     model_id: 'model_001',
     status: 'approved',
+    approved_at: '2026-03-23T10:02:00.000Z',
     fulfilled_at: null,
-    created_at: '2026-03-23T10:02:00.000Z',
+    created_at: '2026-03-23T09:50:00.000Z',
   })
   const approvedView = deriveUnlockView({
     activeRequest: approvedPending,
@@ -91,8 +96,9 @@ async function main() {
     id: 'req_unlocked',
     model_id: 'model_001',
     status: 'approved',
+    approved_at: '2026-03-23T10:02:00.000Z',
     fulfilled_at: '2026-03-23T10:03:00.000Z',
-    created_at: '2026-03-23T10:02:00.000Z',
+    created_at: '2026-03-23T09:50:00.000Z',
   })
   const unlockedView = deriveUnlockView({
     activeRequest: approvedFulfilled,
@@ -105,6 +111,7 @@ async function main() {
     id: 'req_rejected',
     model_id: 'model_001',
     status: 'rejected',
+    rejected_at: '2026-03-23T09:30:00.000Z',
     created_at: '2026-03-23T09:00:00.000Z',
   })
   const rejectedView = deriveUnlockView({
@@ -113,7 +120,7 @@ async function main() {
   })
   assert.equal(rejectedView.currentState, 'rejected')
   assert.equal(rejectedView.currentRequestId, 'req_rejected')
-  assert.equal(rejectedView.rejectedAt, '2026-03-23T09:00:00.000Z')
+  assert.equal(rejectedView.rejectedAt, '2026-03-23T09:30:00.000Z')
 
   const historyWithResubmit = [
     rejectedOld,

@@ -18,6 +18,8 @@ export interface UnlockRequestInsert {
   contact_channel: UnlockContactChannel
   contact_value: string
   note: string | null
+  approved_at: string | null
+  rejected_at: string | null
 }
 
 export interface UnlockRequestRow {
@@ -28,9 +30,22 @@ export interface UnlockRequestRow {
   contact_channel: UnlockContactChannel
   contact_value: string
   note: string | null
+  approved_at: string | null
+  rejected_at: string | null
   fulfilled_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface UnlockRequestUpdate {
+  status?: UnlockRequestStatus
+  contact_name?: string
+  contact_channel?: UnlockContactChannel
+  contact_value?: string
+  note?: string | null
+  approved_at?: string | null
+  rejected_at?: string | null
+  fulfilled_at?: string | null
 }
 
 export interface UnlockRequestView {
@@ -85,6 +100,8 @@ export function toUnlockRequestInsert(
     contact_channel: normalized.contactChannel,
     contact_value: normalized.contactValue,
     note: normalized.note ?? null,
+    approved_at: null,
+    rejected_at: null,
   }
 }
 
@@ -105,8 +122,12 @@ export function findActiveUnlockRequest(
 export function findLatestRejectedUnlockRequest(
   requests: UnlockRequestRow[]
 ): UnlockRequestRow | null {
-  return pickLatestRequest(
+  return pickLatestRequestBy(
     requests.filter((request) => request.status === 'rejected')
+      .map((request) => ({
+        request,
+        timestamp: request.rejected_at || request.created_at,
+      }))
   )
 }
 
@@ -134,18 +155,29 @@ export function mapUnlockRequestInsertErrorToHttpStatus(
   return isUnlockRequestActiveConflict(error) ? 409 : 500
 }
 
-function pickLatestRequest(
-  requests: UnlockRequestRow[]
+function pickLatestRequestBy(
+  entries: Array<{ request: UnlockRequestRow; timestamp: string }>
 ): UnlockRequestRow | null {
-  if (requests.length === 0) {
+  if (entries.length === 0) {
     return null
   }
 
-  return requests.reduce((latest, current) => {
-    const latestAt = Date.parse(latest.created_at)
-    const currentAt = Date.parse(current.created_at)
+  return entries.reduce((latest, current) => {
+    const latestAt = Date.parse(latest.timestamp)
+    const currentAt = Date.parse(current.timestamp)
     return currentAt > latestAt ? current : latest
-  })
+  }).request
+}
+
+function pickLatestRequest(
+  requests: UnlockRequestRow[]
+): UnlockRequestRow | null {
+  return pickLatestRequestBy(
+    requests.map((request) => ({
+      request,
+      timestamp: request.created_at,
+    }))
+  )
 }
 
 function isUnlockContactChannel(
