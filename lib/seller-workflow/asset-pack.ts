@@ -78,7 +78,6 @@ export interface BuildPhase1AssetPackInput {
   presetKey: Phase1Preset['key']
   thumbnailUrl: string
   modelDownloadUrl: string
-  titleSeed?: string
   assetPackSnapshot?: {
     version: 1
     copy: Phase1AssetPackCopy
@@ -110,12 +109,11 @@ export function buildPhase1AssetPack(
     )
   }
 
-  const snapshotCore =
-    input.assetPackSnapshot ??
-    createDeterministicSnapshot({
-      category: input.category,
-      titleSeed: input.titleSeed
-    })
+  if (!input.assetPackSnapshot) {
+    throw new Error('assetPackSnapshot is required for buildPhase1AssetPack')
+  }
+
+  const snapshotCore = input.assetPackSnapshot
 
   const manifest = buildManifest({
     modelId: input.modelId,
@@ -297,41 +295,6 @@ function buildManifest(input: {
       mimeType: 'application/json'
     }
   }
-}
-
-function createDeterministicSnapshot(input: {
-  category: Phase1Category
-  titleSeed?: string
-}): { version: 1; copy: Phase1AssetPackCopy; strategy: Phase1AssetPackStrategy } {
-  const seed = input.titleSeed?.trim() || '包袋新品'
-
-  const copy: Phase1AssetPackCopy = {
-    taobao: {
-      title: `${seed}｜轻奢通勤百搭手提包`,
-      bullets: ['高级皮质触感，质感细腻', '轻量包体设计，久背不累', '多分区收纳，通勤出行更有序']
-    },
-    xiaohongshu: {
-      title: `${seed}开箱｜通勤氛围感直接拉满`,
-      content:
-        '通勤出门总想要一只兼顾颜值和容量的包，这款真的把精致感拿捏住了。日常搭配衬衫、针织或风衣都很顺，拍照也很出片。上手很轻，分区清晰，卡片、口红、耳机都能快速找到，通勤和周末出行都好用。',
-      tags: ['#包包分享', '#通勤穿搭', '#质感好物', '#今日份穿搭']
-    },
-    douyin: {
-      hook: `${seed}上身到底有多显贵？`,
-      script:
-        '3秒告诉你这只包为什么值得入手：第一眼是高级皮质质感，第二眼是利落包型，上身立刻提气场。它的收纳分区很实用，日常通勤所需都能装下，轻便不压肩，搭配通勤装和休闲装都不违和。',
-      tags: ['#包包推荐', '#通勤好物', '#日常穿搭']
-    }
-  }
-
-  const strategy = buildDeterministicStrategy({
-    category: input.category,
-    subcategory: '通勤包',
-    materials: ['皮质'],
-    keyFeatures: ['多分区收纳', '轻量包体', '百搭包型']
-  })
-
-  return { version: 1, copy, strategy }
 }
 
 function getPreferredStyle(platform: Platform): 'casual' | 'professional' | 'trendy' {
