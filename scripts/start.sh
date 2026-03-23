@@ -110,8 +110,8 @@ start_nextjs() {
     cd "$PROJECT_DIR"
 
     # 检查端口
-    if check_port 3000; then
-        echo -e "${YELLOW}⚠ 端口 3000 已被占用，尝试其他端口...${NC}"
+    if check_port 3008; then
+        echo -e "${YELLOW}⚠ 端口 3008 已被占用，尝试其他端口...${NC}"
     fi
 
     # 启动服务
@@ -131,11 +131,11 @@ start_nextjs() {
         echo -e "${BLUE}========================================${NC}"
         echo ""
         echo -e "访问地址："
-        echo -e "  ${GREEN}首页:${NC}         http://localhost:3000"
-        echo -e "  ${GREEN}3D 生成:${NC}      http://localhost:3000/generate"
-        echo -e "  ${GREEN}Agent 控制台:${NC}  http://localhost:3000/agent"
-        echo -e "  ${GREEN}RAG 知识库:${NC}   http://localhost:3000/knowledge"
-        echo -e "  ${GREEN}Prompt 优化:${NC}  http://localhost:3000/fine-tune"
+        echo -e "  ${GREEN}首页:${NC}         http://localhost:3008"
+        echo -e "  ${GREEN}3D 生成:${NC}      http://localhost:3008/generate"
+        echo -e "  ${GREEN}Agent 控制台:${NC}  http://localhost:3008/agent"
+        echo -e "  ${GREEN}RAG 知识库:${NC}   http://localhost:3008/knowledge"
+        echo -e "  ${GREEN}Prompt 优化:${NC}  http://localhost:3008/fine-tune"
         echo ""
         echo -e "服务状态："
         echo -e "  日志目录: $LOG_DIR"

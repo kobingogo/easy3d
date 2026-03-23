@@ -65,7 +65,7 @@ export function TypewriterText({
           transition={{
             duration: 0.8,
             repeat: Infinity,
-            ease: 'stepEnd',
+            ease: 'linear',
           }}
           style={{
             visibility: isComplete ? 'visible' : 'visible',

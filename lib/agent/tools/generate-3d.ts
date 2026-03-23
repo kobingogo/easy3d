@@ -92,7 +92,7 @@ export const generate3DTool: Tool<{
       const taskResponse = await createTask({
         imageUrl,
         prompt: promptText,
-        quality: input.quality || 'standard'
+        type: imageUrl ? 'image_to_model' : 'text_to_model'
       })
 
       if (taskResponse.code !== 0) {
@@ -177,7 +177,6 @@ export const generate3DTool: Tool<{
               base64Image: base64,
               mimeType,
               prompt: promptText,
-              quality: input.quality || 'standard',
             })
 
             if (fallbackResponse.code === 0) {
@@ -238,7 +237,7 @@ export const generate3DTool: Tool<{
           try {
             const fallbackResponse = await createTask({
               prompt: promptText,
-              quality: input.quality || 'standard'
+              type: 'text_to_model'
             })
 
             if (fallbackResponse.code === 0) {

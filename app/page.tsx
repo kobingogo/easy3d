@@ -83,7 +83,7 @@ export default function Home() {
         <div className="container mx-auto relative z-10">
           <ScrollReveal variant="fadeIn" className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
-              三大核心能力展示
+              三大核心能力展示 
             </h2>
             <p className="text-zinc-400 max-w-2xl mx-auto">
               作为 AI 前端工程师能力展示平台，我们实现了 RAG、Agent、Prompt 优化三大技术能力

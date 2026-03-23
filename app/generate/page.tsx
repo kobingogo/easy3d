@@ -3,16 +3,19 @@
 import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UploadZone } from '@/components/upload/UploadZone'
+import { MultiViewUploadZone, type MultiViewImage } from '@/components/upload/MultiViewUploadZone'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { ModelViewer } from '@/components/3d/ModelViewer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Download, RefreshCw, Loader2, AlertCircle, CheckCircle2, Sparkles, Upload, Search, Cpu } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Download, RefreshCw, Loader2, AlertCircle, CheckCircle2, Sparkles, ImageIcon, Layers } from 'lucide-react'
 import { StepProgress, type Step, type StepStatus } from '@/components/ui/step-progress'
 import { CelebrationEffect } from '@/components/ui/celebration-effect'
 
 type GenerationStatus = 'idle' | 'uploading' | 'generating' | 'polling' | 'completed' | 'failed'
+type UploadMode = 'single' | 'multiview'
 
 interface GenerationState {
   status: GenerationStatus
@@ -23,11 +26,21 @@ interface GenerationState {
   error: string | null
   startTime: number | null
   stepDurations: Record<string, number>
+  taskType?: 'image_to_model' | 'multiview_to_model'
 }
 
 export default function GeneratePage() {
+  // 上传模式
+  const [uploadMode, setUploadMode] = useState<UploadMode>('single')
+
+  // 单图模式状态
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  // 多视角模式状态
+  const [multiViewImages, setMultiViewImages] = useState<MultiViewImage[]>([])
+
+  // 生成状态
   const [showCelebration, setShowCelebration] = useState(false)
   const [generation, setGeneration] = useState<GenerationState>({
     status: 'idle',
@@ -41,9 +54,8 @@ export default function GeneratePage() {
   })
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Calculate steps based on generation status
+  // 计算步骤
   const getSteps = (): Step[] => {
-    const now = Date.now()
     const stepStatus = (stepId: string, activeStatus: GenerationStatus, completeStatuses: GenerationStatus[]): StepStatus => {
       if (completeStatuses.includes(generation.status)) return 'completed'
       if (generation.status === activeStatus) return 'running'
@@ -68,7 +80,7 @@ export default function GeneratePage() {
       {
         id: 'generate',
         name: '生成',
-        description: '生成 3D 模型',
+        description: generation.taskType === 'multiview_to_model' ? '多视角生成 3D 模型' : '生成 3D 模型',
         status: stepStatus('generate', 'polling', ['completed']),
         duration: generation.stepDurations['generate']
       },
@@ -82,18 +94,28 @@ export default function GeneratePage() {
     ]
   }
 
-  const handleUpload = useCallback(async (files: File[]) => {
+  // 单图上传处理
+  const handleSingleUpload = useCallback(async (files: File[]) => {
     const file = files[0]
     if (!file) return
 
-    // 停止之前的轮询
+    resetGeneration()
+    setUploadedFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
+  }, [])
+
+  // 多视角上传处理
+  const handleMultiViewUpload = useCallback((images: MultiViewImage[]) => {
+    resetGeneration()
+    setMultiViewImages(images)
+  }, [])
+
+  // 重置生成状态
+  const resetGeneration = useCallback(() => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current)
       pollingRef.current = null
     }
-
-    setUploadedFile(file)
-    setPreviewUrl(URL.createObjectURL(file))
     setGeneration({
       status: 'idle',
       progress: 0,
@@ -104,8 +126,10 @@ export default function GeneratePage() {
       startTime: null,
       stepDurations: {}
     })
+    setShowCelebration(false)
   }, [])
 
+  // 轮询状态
   const pollStatus = useCallback(async (taskId: string) => {
     try {
       const res = await fetch(`/api/tripo/status/${taskId}`)
@@ -154,33 +178,39 @@ export default function GeneratePage() {
     }
   }, [])
 
-  const handleGenerate = useCallback(async () => {
+  // 上传单个文件到服务器
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadRes = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!uploadRes.ok) {
+      const uploadData = await uploadRes.json()
+      throw new Error(uploadData.error || '上传失败')
+    }
+
+    const uploadData = await uploadRes.json()
+    return uploadData.url
+  }
+
+  // 单图生成（使用智能分析流程）
+  const handleSingleGenerate = useCallback(async () => {
     if (!uploadedFile) return
 
     const startTime = Date.now()
 
     try {
-      // 1. 上传图片
       setGeneration(prev => ({ ...prev, status: 'uploading', progress: 5, startTime }))
 
-      const formData = new FormData()
-      formData.append('file', uploadedFile)
-
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!uploadRes.ok) {
-        const uploadData = await uploadRes.json()
-        throw new Error(uploadData.error || '上传失败')
-      }
-
-      const uploadData = await uploadRes.json()
-      const imageUrl = uploadData.url
+      // 上传图片
+      const imageUrl = await uploadFile(uploadedFile)
       const uploadDuration = Date.now() - startTime
 
-      // 2. 调用 Tripo API
+      // 调用智能生成 API（包含产品分析和提示词优化）
       const analyzeStart = Date.now()
       setGeneration(prev => ({
         ...prev,
@@ -189,12 +219,12 @@ export default function GeneratePage() {
         stepDurations: { ...prev.stepDurations, upload: uploadDuration }
       }))
 
-      const generateRes = await fetch('/api/generate', {
+      const generateRes = await fetch('/api/generate-smart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl,
-          quality: 'standard'
+          taskType: 'image_to_model'
         })
       })
 
@@ -207,15 +237,24 @@ export default function GeneratePage() {
       const taskId = generateData.taskId
       const analyzeDuration = Date.now() - analyzeStart
 
+      // 打印智能分析结果（调试用）
+      console.log('[Generate] Smart analysis:', {
+        category: generateData.analysis?.category,
+        subcategory: generateData.analysis?.subcategory,
+        keyFeatures: generateData.analysis?.keyFeatures,
+        optimizedPrompt: generateData.optimizedPrompt,
+        structuralHints: generateData.structuralHints,
+      })
+
       setGeneration(prev => ({
         ...prev,
         status: 'polling',
         taskId,
+        taskType: 'image_to_model',
         progress: 15,
         stepDurations: { ...prev.stepDurations, analyze: analyzeDuration }
       }))
 
-      // 3. 开始轮询
       pollingRef.current = setInterval(() => pollStatus(taskId), 3000)
 
     } catch (error: any) {
@@ -228,26 +267,91 @@ export default function GeneratePage() {
     }
   }, [uploadedFile, pollStatus])
 
-  const handleReset = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
+  // 多视角生成（使用智能分析流程）
+  const handleMultiviewGenerate = useCallback(async () => {
+    if (multiViewImages.length < 2) return
+
+    const startTime = Date.now()
+
+    try {
+      setGeneration(prev => ({ ...prev, status: 'uploading', progress: 5, startTime }))
+
+      // 上传所有图片
+      const uploadPromises = multiViewImages.map(img => uploadFile(img.file))
+      const imageUrls = await Promise.all(uploadPromises)
+      const uploadDuration = Date.now() - startTime
+
+      // 构建图片数组
+      const images = multiViewImages.map((img, index) => ({
+        url: imageUrls[index],
+        type: img.file.type.split('/')[1] || 'jpg'
+      }))
+
+      // 调用智能生成 API
+      const analyzeStart = Date.now()
+      setGeneration(prev => ({
+        ...prev,
+        status: 'generating',
+        progress: 10,
+        stepDurations: { ...prev.stepDurations, upload: uploadDuration }
+      }))
+
+      const generateRes = await fetch('/api/generate-smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          images,
+          taskType: 'multiview_to_model'
+        })
+      })
+
+      if (!generateRes.ok) {
+        const generateData = await generateRes.json()
+        throw new Error(generateData.error || '生成请求失败')
+      }
+
+      const generateData = await generateRes.json()
+      const taskId = generateData.taskId
+      const analyzeDuration = Date.now() - analyzeStart
+
+      // 打印智能分析结果（调试用）
+      console.log('[Generate] Smart analysis:', {
+        category: generateData.analysis?.category,
+        subcategory: generateData.analysis?.subcategory,
+        keyFeatures: generateData.analysis?.keyFeatures,
+        optimizedPrompt: generateData.optimizedPrompt,
+      })
+
+      setGeneration(prev => ({
+        ...prev,
+        status: 'polling',
+        taskId,
+        taskType: 'multiview_to_model',
+        progress: 15,
+        stepDurations: { ...prev.stepDurations, analyze: analyzeDuration }
+      }))
+
+      pollingRef.current = setInterval(() => pollStatus(taskId), 3000)
+
+    } catch (error: any) {
+      console.error('Generation error:', error)
+      setGeneration(prev => ({
+        ...prev,
+        status: 'failed',
+        error: error.message || '生成失败，请重试'
+      }))
     }
+  }, [multiViewImages, pollStatus])
+
+  // 重置
+  const handleReset = useCallback(() => {
+    resetGeneration()
     setUploadedFile(null)
     setPreviewUrl(null)
-    setShowCelebration(false)
-    setGeneration({
-      status: 'idle',
-      progress: 0,
-      taskId: null,
-      modelUrl: null,
-      thumbnailUrl: null,
-      error: null,
-      startTime: null,
-      stepDurations: {}
-    })
-  }, [])
+    setMultiViewImages([])
+  }, [resetGeneration])
 
+  // 下载
   const handleDownload = useCallback(async () => {
     if (!generation.modelUrl) return
 
@@ -309,12 +413,9 @@ export default function GeneratePage() {
 
   return (
     <div className="relative min-h-screen">
-      {/* Grid Background */}
+      {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90" />
-
-        {/* Grid pattern */}
         <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
@@ -325,11 +426,8 @@ export default function GeneratePage() {
             backgroundSize: '60px 60px'
           }}
         />
-
-        {/* Glow effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[150px]" />
       </div>
 
       {/* Content */}
@@ -341,7 +439,7 @@ export default function GeneratePage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-8"
           >
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+            <h1 className="text-3xl font-bold mb-2">
               AI 3D 模型生成
             </h1>
             <p className="text-muted-foreground">
@@ -371,66 +469,68 @@ export default function GeneratePage() {
               transition={{ delay: 0.2 }}
               className="space-y-4"
             >
-              <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden group hover:border-primary/30 transition-colors">
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <motion.div
-                      animate={generation.status === 'idle' ? { scale: [1, 1.1, 1] } : {}}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <Upload className="h-5 w-5 text-primary" />
-                    </motion.div>
-                    上传商品图片
-                  </CardTitle>
+                  <CardTitle className="text-lg">上传商品图片</CardTitle>
                   <CardDescription>
-                    支持 JPG、PNG、WebP 格式，最大 10MB
+                    选择上传模式：单图快速生成或多视角精准生成
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <UploadZone
-                    onUpload={handleUpload}
-                    maxFiles={1}
-                    disabled={isProcessing}
-                  />
+                  {/* 模式切换 */}
+                  <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as UploadMode)} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="single" className="flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        单图模式
+                      </TabsTrigger>
+                      <TabsTrigger value="multiview" className="flex items-center gap-2">
+                        <Layers className="w-4 h-4" />
+                        多视角模式
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="single" className="mt-0">
+                      <UploadZone
+                        onUpload={handleSingleUpload}
+                        maxFiles={1}
+                        disabled={isProcessing}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="multiview" className="mt-0">
+                      <MultiViewUploadZone
+                        onUpload={handleMultiViewUpload}
+                        disabled={isProcessing}
+                      />
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
 
               {/* 预览图 */}
               <AnimatePresence>
-                {previewUrl && (
+                {uploadMode === 'single' && previewUrl && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
                   >
-                    <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
+                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-lg">原图预览</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                          <img
-                            src={previewUrl}
-                            alt="预览"
-                            className="w-full h-full object-contain"
-                          />
-                          {/* Success overlay */}
+                          <img src={previewUrl} alt="预览" className="w-full h-full object-contain" />
                           <AnimatePresence>
                             {generation.status === 'completed' && (
                               <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
                                 className="absolute inset-0 bg-green-500/20 flex items-center justify-center"
                               >
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ type: 'spring', damping: 10 }}
-                                >
-                                  <CheckCircle2 className="h-16 w-16 text-green-500" />
-                                </motion.div>
+                                <CheckCircle2 className="h-16 w-16 text-green-500" />
                               </motion.div>
                             )}
                           </AnimatePresence>
@@ -442,70 +542,33 @@ export default function GeneratePage() {
               </AnimatePresence>
 
               {/* 操作按钮 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="flex gap-3"
-              >
-                {uploadedFile && generation.status === 'idle' && (
-                  <Button
-                    className="flex-1 group relative overflow-hidden"
-                    size="lg"
-                    onClick={handleGenerate}
-                  >
-                    <motion.span
-                      className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/10 to-primary/0"
-                      animate={{ x: ['-100%', '100%'] }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 0.5 }}
-                    />
+              <motion.div className="flex gap-3">
+                {uploadMode === 'single' && uploadedFile && generation.status === 'idle' && (
+                  <Button className="flex-1" size="lg" onClick={handleSingleGenerate}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     开始生成 3D 模型
                   </Button>
                 )}
 
+                {uploadMode === 'multiview' && multiViewImages.length >= 2 && generation.status === 'idle' && (
+                  <Button className="flex-1" size="lg" onClick={handleMultiviewGenerate}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    使用 {multiViewImages.length} 张图片生成
+                  </Button>
+                )}
+
                 {isProcessing && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    disabled
-                    className="flex-1"
-                  >
+                  <Button variant="outline" size="lg" disabled className="flex-1">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {getStatusText()}
                   </Button>
                 )}
 
-                {generation.status === 'completed' && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleReset}
-                    className="flex-1"
-                  >
+                {(generation.status === 'completed' || generation.status === 'failed') && (
+                  <Button variant="outline" size="lg" onClick={handleReset} className="flex-1">
                     <RefreshCw className="mr-2 h-4 w-4" />
                     重新生成
                   </Button>
-                )}
-
-                {generation.status === 'failed' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={handleReset}
-                    >
-                      重置
-                    </Button>
-                    <Button
-                      size="lg"
-                      onClick={handleGenerate}
-                      className="flex-1"
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      重试
-                    </Button>
-                  </>
                 )}
               </motion.div>
             </motion.div>
@@ -536,7 +599,9 @@ export default function GeneratePage() {
                       >
                         <Progress value={generation.progress} className="h-2" />
                         <p className="text-xs text-muted-foreground mt-2 text-center">
-                          预计还需 {Math.max(1, Math.round((100 - generation.progress) * 0.5))} 秒
+                          {generation.taskType === 'multiview_to_model'
+                            ? '多视角生成中，预计 60-90 秒'
+                            : '预计还需 ' + Math.max(1, Math.round((100 - generation.progress) * 0.5)) + ' 秒'}
                         </p>
                       </motion.div>
                     )}
@@ -550,13 +615,10 @@ export default function GeneratePage() {
                       className="space-y-4"
                     >
                       <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-lg overflow-hidden relative">
-                        <ModelViewer modelUrl={generation.modelUrl} className="w-full h-full" />
-
-                        {/* Success glow effect */}
+                        <ModelViewer modelUrl={ generation.modelUrl} className="w-full h-full" />
                         <div className="absolute inset-0 pointer-events-none border-2 border-green-500/30 rounded-lg animate-pulse" />
                       </div>
 
-                      {/* 缩略图预览 */}
                       {generation.thumbnailUrl && (
                         <div className="flex gap-2">
                           <img
@@ -567,13 +629,9 @@ export default function GeneratePage() {
                         </div>
                       )}
 
-                      {/* 下载按钮 */}
                       <div className="flex gap-3">
-                        <Button
-                          className="flex-1 group"
-                          onClick={handleDownload}
-                        >
-                          <Download className="mr-2 h-4 w-4 group-hover:animate-bounce" />
+                        <Button className="flex-1" onClick={handleDownload}>
+                          <Download className="mr-2 h-4 w-4" />
                           下载 GLB 模型
                         </Button>
                         <Button
@@ -593,27 +651,8 @@ export default function GeneratePage() {
                     </motion.div>
                   ) : (
                     <div className="aspect-square bg-muted/50 rounded-lg flex flex-col items-center justify-center text-muted-foreground relative overflow-hidden">
-                      {/* Background animation for processing state */}
-                      {isProcessing && (
-                        <motion.div
-                          className="absolute inset-0"
-                          animate={{
-                            background: [
-                              'radial-gradient(circle at 50% 50%, rgba(var(--primary), 0.05) 0%, transparent 50%)',
-                              'radial-gradient(circle at 50% 50%, rgba(var(--primary), 0.1) 0%, transparent 60%)',
-                              'radial-gradient(circle at 50% 50%, rgba(var(--primary), 0.05) 0%, transparent 50%)'
-                            ]
-                          }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                      )}
-
                       {isProcessing ? (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex flex-col items-center relative z-10"
-                        >
+                        <motion.div className="flex flex-col items-center relative z-10">
                           <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -621,47 +660,25 @@ export default function GeneratePage() {
                             <Loader2 className="w-12 h-12 mb-4 text-primary" />
                           </motion.div>
                           <p className="text-sm">AI 正在生成模型...</p>
-                          <motion.p
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="text-xs mt-1"
-                          >
-                            预计需要 30-60 秒
-                          </motion.p>
+                          <p className="text-xs mt-1">
+                            {generation.taskType === 'multiview_to_model' ? '多视角模式，预计 60-90 秒' : '预计需要 30-60 秒'}
+                          </p>
                         </motion.div>
                       ) : generation.status === 'failed' ? (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="flex flex-col items-center"
-                        >
-                          <motion.div
-                            animate={{ x: [0, -5, 5, -5, 5, 0] }}
-                            transition={{ duration: 0.5 }}
-                          >
-                            <AlertCircle className="w-12 h-12 mb-4 text-destructive" />
-                          </motion.div>
+                        <div className="flex flex-col items-center">
+                          <AlertCircle className="w-12 h-12 mb-4 text-destructive" />
                           <p className="text-sm text-destructive">{generation.error}</p>
-                        </motion.div>
+                        </div>
                       ) : (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex flex-col items-center"
-                        >
-                          <motion.div
-                            className="w-16 h-16 mb-4 rounded-full bg-muted-foreground/10 flex items-center justify-center relative"
-                            whileHover={{ scale: 1.05 }}
-                          >
+                        <div className="flex flex-col items-center">
+                          <div className="w-16 h-16 mb-4 rounded-full bg-muted-foreground/10 flex items-center justify-center">
                             <Sparkles className="w-8 h-8" />
-                            <motion.div
-                              className="absolute inset-0 rounded-full border-2 border-primary/20"
-                              animate={{ scale: [1, 1.2], opacity: [0.5, 0] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            />
-                          </motion.div>
+                          </div>
                           <p>上传图片后开始生成</p>
-                        </motion.div>
+                          <p className="text-xs mt-2 text-muted-foreground">
+                            {uploadMode === 'multiview' ? '多视角模式可获得更精准的模型' : '单图模式快速生成'}
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -681,10 +698,10 @@ export default function GeneratePage() {
               <span className="text-lg">💡</span> 使用提示
             </h3>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• 上传清晰的商品图片效果更佳</li>
-              <li>• 建议使用白色或纯色背景的图片</li>
-              <li>• 生成时间约 30-60 秒，请耐心等待</li>
-              <li>• 生成的 GLB 模型可在各种 3D 软件中使用</li>
+              <li>• <strong>单图模式：</strong>上传一张清晰的正面图，快速生成 3D 模型</li>
+              <li>• <strong>多视角模式：</strong>上传 2-4 张不同角度的照片，生成更精准的模型</li>
+              <li>• 建议使用白色或纯色背景的图片，效果更佳</li>
+              <li>• 多视角图片请按正/左/背/右顺序上传</li>
             </ul>
           </motion.div>
         </div>
