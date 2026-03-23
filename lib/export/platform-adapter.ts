@@ -3,7 +3,8 @@
  * 为不同电商平台提供尺寸适配功能
  */
 
-export type Platform = 'taobao' | 'xiaohongshu' | 'douyin'
+export const PHASE1_PLATFORMS = ['taobao', 'xiaohongshu', 'douyin'] as const
+export type Platform = (typeof PHASE1_PLATFORMS)[number]
 
 export interface PlatformSpec {
   name: string
@@ -76,7 +77,7 @@ export function getPlatformSpec(platform: Platform): PlatformSpec {
  * 获取所有平台规格
  */
 export function getAllPlatformSpecs(): PlatformSpec[] {
-  return Object.values(PLATFORM_SPECS)
+  return PHASE1_PLATFORMS.map((platform) => PLATFORM_SPECS[platform])
 }
 
 /**
@@ -165,10 +166,8 @@ export async function adaptImageForPlatform(
 export async function adaptForAllPlatforms(
   imageUrl: string
 ): Promise<Record<Platform, AdaptedImage>> {
-  const platforms: Platform[] = ['taobao', 'xiaohongshu', 'douyin']
-
   const results = await Promise.all(
-    platforms.map(async (platform) => {
+    PHASE1_PLATFORMS.map(async (platform) => {
       const adapted = await adaptImageForPlatform(imageUrl, platform)
       return [platform, adapted] as const
     })
