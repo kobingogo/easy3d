@@ -41,6 +41,18 @@ const PLATFORM_COPY_FILENAMES: Record<Platform, Phase1ZipEntryPath> = {
   douyin: 'copy/douyin-script.md',
 }
 
+export const PHASE1_ASSET_PACK_FILE_NAMES = {
+  taobaoAsset: 'assets/taobao-main.jpg',
+  xiaohongshuAsset: 'assets/xiaohongshu-cover.jpg',
+  douyinAsset: 'assets/douyin-vertical.jpg',
+  taobaoCopy: 'copy/taobao-listing.md',
+  xiaohongshuCopy: 'copy/xiaohongshu-post.md',
+  douyinCopy: 'copy/douyin-script.md',
+  strategy: 'strategy/strategy-summary.json',
+  manifest: 'manifest/asset-pack-manifest.json',
+  model: 'model/model.glb',
+} as const
+
 export interface AssetPackManifest {
   filename: 'manifest/asset-pack-manifest.json'
   model: { downloadUrl: string; filename: 'model/model.glb' }
@@ -81,11 +93,38 @@ export interface Phase1AssetPackStrategy {
   reasoningSummary: string
 }
 
+export interface Phase1PublishingPrepVariant {
+  id: 'v1' | 'v2' | 'v3'
+  title: string
+  content: string
+  tags: string[]
+}
+
+export interface Phase1PublishingCoverSuggestion {
+  theme: string
+  shotType: string
+  visualCue: string
+  overlayText: string
+}
+
+export interface Phase1PublishingPrepPlatform {
+  platform: Platform
+  recommendedVariantId: Phase1PublishingPrepVariant['id']
+  coverSuggestion: Phase1PublishingCoverSuggestion
+  variants: Phase1PublishingPrepVariant[]
+}
+
+export interface Phase1PublishingPrep {
+  generatedAt: string
+  platforms: Phase1PublishingPrepPlatform[]
+}
+
 export interface Phase1AssetPackSnapshot {
   version: 1
   copy: Phase1AssetPackCopy
   strategy: Phase1AssetPackStrategy
   manifest: AssetPackManifest
+  publishingPrep?: Phase1PublishingPrep
 }
 
 export interface Phase1AssetPack {
@@ -243,6 +282,7 @@ export async function materializePhase1AssetPackSnapshot(
     materials: input.analysisSummary.materials,
     keyFeatures: input.analysisSummary.keyFeatures
   })
+  const publishingPrep = buildPhase1PublishingPrep({ copy, strategy })
 
   const manifest = buildPhase1AssetPackManifest({
     modelId: input.modelId,
@@ -257,7 +297,126 @@ export async function materializePhase1AssetPackSnapshot(
     version: 1,
     copy,
     strategy,
-    manifest
+    manifest,
+    publishingPrep
+  }
+}
+
+export function buildPhase1PublishingPrep(input: {
+  copy: Phase1AssetPackCopy
+  strategy: Phase1AssetPackStrategy
+  nowIso?: string
+}): Phase1PublishingPrep {
+  const generatedAt = (() => {
+    if (input.nowIso) {
+      const parsed = new Date(input.nowIso)
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString()
+      }
+    }
+    return new Date().toISOString()
+  })()
+
+  const taobaoVariants: Phase1PublishingPrepVariant[] = [
+    {
+      id: 'v1',
+      title: `${input.copy.taobao.title}｜转化版`,
+      content: input.copy.taobao.bullets.join('；'),
+      tags: inferTaobaoTags(input.copy, input.strategy),
+    },
+    {
+      id: 'v2',
+      title: `${input.copy.taobao.title}｜场景版`,
+      content: `围绕${input.strategy.heroAngle}呈现上身场景，重点强化${input.strategy.marketingHook}。`,
+      tags: inferTaobaoTags(input.copy, input.strategy),
+    },
+    {
+      id: 'v3',
+      title: `${input.copy.taobao.title}｜参数版`,
+      content: `卖点拆解：${input.strategy.featureFocus.join(' / ')}；材质重点：${input.strategy.materialFocus.join(' / ')}。`,
+      tags: inferTaobaoTags(input.copy, input.strategy),
+    },
+  ]
+
+  const xiaohongshuVariants: Phase1PublishingPrepVariant[] = [
+    {
+      id: 'v1',
+      title: `${input.copy.xiaohongshu.title}｜转化版`,
+      content: input.copy.xiaohongshu.content,
+      tags: normalizeTags(input.copy.xiaohongshu.tags),
+    },
+    {
+      id: 'v2',
+      title: `${input.copy.xiaohongshu.title}｜场景版`,
+      content: `从${input.strategy.heroAngle}切入，结合${input.strategy.styleDirection}，突出真实通勤体验。`,
+      tags: normalizeTags(input.copy.xiaohongshu.tags),
+    },
+    {
+      id: 'v3',
+      title: `${input.copy.xiaohongshu.title}｜参数版`,
+      content: `重点说明${input.strategy.featureFocus.join(' / ')}，并补充${input.strategy.materialFocus.join(' / ')}质感细节。`,
+      tags: normalizeTags(input.copy.xiaohongshu.tags),
+    },
+  ]
+
+  const douyinVariants: Phase1PublishingPrepVariant[] = [
+    {
+      id: 'v1',
+      title: `${input.copy.douyin.hook}｜转化版`,
+      content: input.copy.douyin.script,
+      tags: normalizeTags(input.copy.douyin.tags),
+    },
+    {
+      id: 'v2',
+      title: `${input.copy.douyin.hook}｜场景版`,
+      content: `开场 3 秒先给场景冲突，再承接${input.strategy.marketingHook}。`,
+      tags: normalizeTags(input.copy.douyin.tags),
+    },
+    {
+      id: 'v3',
+      title: `${input.copy.douyin.hook}｜参数版`,
+      content: `卖点节奏：${input.strategy.featureFocus.join('、')}；结尾补充${input.strategy.materialFocus.join('、')}。`,
+      tags: normalizeTags(input.copy.douyin.tags),
+    },
+  ]
+
+  return {
+    generatedAt,
+    platforms: [
+      {
+        platform: 'taobao',
+        recommendedVariantId: 'v1',
+        coverSuggestion: {
+          theme: '简洁通勤 · 转化主图',
+          shotType: '正面三分构图',
+          visualCue: '白底干净布光，保留包型比例与五金高光',
+          overlayText: input.copy.taobao.title,
+        },
+        variants: taobaoVariants,
+      },
+      {
+        platform: 'xiaohongshu',
+        recommendedVariantId: input.strategy.recommendedPlatform === 'xiaohongshu' ? 'v2' : 'v1',
+        coverSuggestion: {
+          theme: '场景种草 · 通勤封面',
+          shotType: '半身穿搭构图',
+          visualCue: '人物与包同框，强调上身比例和材质细节',
+          overlayText: input.copy.xiaohongshu.title,
+        },
+        variants: xiaohongshuVariants,
+      },
+      {
+        platform: 'douyin',
+        recommendedVariantId: input.strategy.recommendedPlatform === 'douyin' ? 'v3' : 'v1',
+        coverSuggestion: {
+          theme: '开场抓眼 · 短视频封面',
+          shotType: '近景+手持动态',
+          visualCue: '前景标题+中景包体，突出 3 秒识别',
+          overlayText: input.copy.douyin.hook,
+        },
+        variants: douyinVariants,
+      },
+    ],
   }
 }
 
@@ -451,6 +610,19 @@ function serializeXiaohongshuCopy(copy: Phase1AssetPackCopy['xiaohongshu']): str
 function serializeDouyinCopy(copy: Phase1AssetPackCopy['douyin']): string {
   const tags = copy.tags.join(' ')
   return `# Hook\n${copy.hook}\n\n# Script\n${copy.script}\n\n${tags}\n`
+}
+
+function inferTaobaoTags(
+  copy: Phase1AssetPackCopy,
+  strategy: Phase1AssetPackStrategy
+): string[] {
+  const featureTags = strategy.featureFocus.map((feature) => `#${feature}`)
+  return normalizeTags([
+    ...copy.xiaohongshu.tags,
+    ...copy.douyin.tags,
+    ...featureTags,
+    '#电商上新',
+  ]).slice(0, 6)
 }
 
 function dedupe(values: string[]): string[] {

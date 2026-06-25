@@ -16,6 +16,8 @@ export interface Phase1ModelMetadata {
   category: Phase1Category
   presetKey: Phase1Preset['key']
   uploadMode: Phase1UploadMode
+  workflowTemplateId?: string
+  brandProfileId?: string | null
   unlockStatus: UnlockStatus
   analysisSummary: Phase1AnalysisSummary
   assetPackPreviewReady: boolean
@@ -27,6 +29,8 @@ export interface BuildPhase1ModelMetadataInput {
   category: Phase1Category
   presetKey: Phase1Preset['key']
   uploadMode: Phase1UploadMode
+  workflowTemplateId?: string
+  brandProfileId?: string | null
   analysisSummary?: Phase1AnalysisSummary
   unlockStatus?: UnlockStatus
   assetPackPreviewReady?: boolean
@@ -64,6 +68,8 @@ export function buildPhase1ModelMetadata(
     category: input.category,
     presetKey: input.presetKey,
     uploadMode: input.uploadMode,
+    ...(input.workflowTemplateId ? { workflowTemplateId: input.workflowTemplateId } : {}),
+    ...(typeof input.brandProfileId !== 'undefined' ? { brandProfileId: input.brandProfileId } : {}),
     unlockStatus: input.unlockStatus ?? 'preview_only',
     analysisSummary: normalizeAnalysisSummary(input.analysisSummary),
     assetPackPreviewReady,

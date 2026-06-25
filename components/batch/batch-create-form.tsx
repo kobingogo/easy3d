@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Loader2, PlusCircle, UploadCloud } from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { Loader2, PlusCircle, Settings2, UploadCloud } from 'lucide-react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,18 @@ import { Textarea } from '@/components/ui/textarea'
 
 interface BatchCreateFormProps {
   onCreated?: (batchId: string) => void
+}
+
+interface BrandProfileOption {
+  id: string
+  name: string
+}
+
+interface WorkflowTemplateOption {
+  id: string
+  name: string
+  brandProfileId: string | null
+  isDefault: boolean
 }
 
 function normalizeUrls(input: string) {
@@ -26,8 +39,72 @@ export function BatchCreateForm({ onCreated }: BatchCreateFormProps) {
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [optionsLoading, setOptionsLoading] = useState(true)
+  const [optionsError, setOptionsError] = useState<string | null>(null)
+  const [brandProfiles, setBrandProfiles] = useState<BrandProfileOption[]>([])
+  const [templates, setTemplates] = useState<WorkflowTemplateOption[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
 
   const combinedUrls = Array.from(new Set([...uploadedUrls, ...normalizeUrls(manualUrls)]))
+  const selectedTemplate = templates.find((item) => item.id === selectedTemplateId) || null
+
+  const selectedBrandName = useMemo(() => {
+    if (!selectedTemplate?.brandProfileId) {
+      return null
+    }
+    const profile = brandProfiles.find((item) => item.id === selectedTemplate.brandProfileId)
+    return profile?.name || null
+  }, [brandProfiles, selectedTemplate?.brandProfileId])
+
+  useEffect(() => {
+    async function loadTemplateOptions() {
+      setOptionsLoading(true)
+      setOptionsError(null)
+
+      try {
+        const [profilesRes, templatesRes] = await Promise.all([
+          fetch('/api/brand-profiles?limit=50', { cache: 'no-store' }),
+          fetch('/api/workflow-templates?limit=50', { cache: 'no-store' }),
+        ])
+        const profilesPayload = await profilesRes.json()
+        const templatesPayload = await templatesRes.json()
+
+        if (!profilesRes.ok) {
+          throw new Error(profilesPayload?.error || '品牌资产加载失败')
+        }
+        if (!templatesRes.ok) {
+          throw new Error(templatesPayload?.error || '模板加载失败')
+        }
+
+        const nextProfiles = Array.isArray(profilesPayload?.profiles)
+          ? (profilesPayload.profiles as BrandProfileOption[])
+          : []
+        const nextTemplates = Array.isArray(templatesPayload?.templates)
+          ? (templatesPayload.templates as WorkflowTemplateOption[])
+          : []
+        setBrandProfiles(nextProfiles)
+        setTemplates(nextTemplates)
+
+        if (nextTemplates.length > 0) {
+          const defaultTemplateId =
+            typeof templatesPayload?.defaultTemplateId === 'string'
+              ? templatesPayload.defaultTemplateId
+              : nextTemplates.find((item) => item.isDefault)?.id || ''
+          setSelectedTemplateId(defaultTemplateId || '')
+        } else {
+          setSelectedTemplateId('')
+        }
+      } catch (loadError: any) {
+        setBrandProfiles([])
+        setTemplates([])
+        setOptionsError(loadError?.message || '模板配置加载失败')
+      } finally {
+        setOptionsLoading(false)
+      }
+    }
+
+    void loadTemplateOptions()
+  }, [])
 
   async function handleUpload(files: File[]) {
     setUploading(true)
@@ -76,6 +153,7 @@ export function BatchCreateForm({ onCreated }: BatchCreateFormProps) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
+          workflowTemplateId: selectedTemplateId || null,
           items: combinedUrls.map((sourceImageUrl) => ({ sourceImageUrl })),
         }),
       })
@@ -120,6 +198,42 @@ export function BatchCreateForm({ onCreated }: BatchCreateFormProps) {
             placeholder="例如：春季通勤包袋第 1 批"
             className="w-full rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-primary/50"
           />
+        </div>
+
+        <div className="space-y-2 rounded-lg border border-white/10 bg-black/20 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-sm text-zinc-300">工作流模板（Phase 2B）</label>
+            <Link href="/dashboard/templates" className="text-xs text-zinc-400 hover:text-zinc-200">
+              <span className="inline-flex items-center gap-1">
+                <Settings2 className="h-3.5 w-3.5" />
+                管理模板/品牌资产
+              </span>
+            </Link>
+          </div>
+          <select
+            value={selectedTemplateId}
+            onChange={(event) => setSelectedTemplateId(event.target.value)}
+            disabled={optionsLoading || submitting}
+            className="w-full rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <option value="">基础流程（不套模板）</option>
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+                {template.isDefault ? '（默认）' : ''}
+              </option>
+            ))}
+          </select>
+          {optionsError ? <p className="text-xs text-rose-300">{optionsError}</p> : null}
+          {!optionsError && selectedTemplate ? (
+            <p className="text-xs text-zinc-400">
+              已选模板：{selectedTemplate.name}
+              {selectedBrandName ? ` · 绑定品牌资产：${selectedBrandName}` : ' · 未绑定品牌资产'}
+            </p>
+          ) : null}
+          {!optionsError && !selectedTemplate ? (
+            <p className="text-xs text-zinc-400">未套模板，批次将使用 Phase 1 默认策略。</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">

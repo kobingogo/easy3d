@@ -10,6 +10,7 @@ interface BatchJobRow {
   id: string
   name: string
   category: 'bags'
+  workflow_template_id: string | null
   status: 'queued' | 'running' | 'partial_failed' | 'completed' | 'canceled'
   total_count: number
   queued_count: number
@@ -30,6 +31,7 @@ interface BatchCreateItemPayload {
 interface BatchCreatePayload {
   name: string
   category?: 'bags'
+  workflowTemplateId: string | null
   items: BatchCreateItemPayload[]
 }
 
@@ -44,6 +46,7 @@ function toBatchSummary(row: BatchJobRow): BatchJobSummary {
     id: row.id,
     name: row.name,
     category: row.category,
+    workflowTemplateId: row.workflow_template_id ?? null,
     status: row.status,
     totalCount: row.total_count,
     queuedCount: row.queued_count,
@@ -80,6 +83,10 @@ function normalizeBatchCreatePayload(payload: any): BatchCreatePayload {
   return {
     name,
     category: 'bags',
+    workflowTemplateId:
+      typeof payload?.workflowTemplateId === 'string' && payload.workflowTemplateId.trim()
+        ? payload.workflowTemplateId.trim()
+        : null,
     items: normalized,
   }
 }
@@ -90,12 +97,29 @@ export async function POST(request: NextRequest) {
     const createClientImpl = testOverrides.createClient ?? createClient
     const supabase = await createClientImpl()
 
+    if (payload.workflowTemplateId) {
+      const { data: template, error: templateError } = await supabase
+        .from('workflow_templates')
+        .select('id,category')
+        .eq('id', payload.workflowTemplateId)
+        .single()
+
+      if (templateError || !template) {
+        return NextResponse.json({ error: '工作流模板不存在' }, { status: 400 })
+      }
+
+      if (template.category !== payload.category) {
+        return NextResponse.json({ error: '工作流模板品类与批次不一致' }, { status: 400 })
+      }
+    }
+
     const totalCount = payload.items.length
     const { data: batch, error: batchError } = await supabase
       .from('batch_jobs')
       .insert({
         name: payload.name,
         category: payload.category,
+        workflow_template_id: payload.workflowTemplateId,
         status: 'queued',
         total_count: totalCount,
         queued_count: totalCount,

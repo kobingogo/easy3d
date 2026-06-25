@@ -133,6 +133,7 @@ export interface Database {
           id: string
           name: string
           category: 'bags'
+          workflow_template_id: string | null
           status: 'queued' | 'running' | 'partial_failed' | 'completed' | 'canceled'
           total_count: number
           queued_count: number
@@ -149,6 +150,7 @@ export interface Database {
           id?: string
           name: string
           category?: 'bags'
+          workflow_template_id?: string | null
           status?: 'queued' | 'running' | 'partial_failed' | 'completed' | 'canceled'
           total_count?: number
           queued_count?: number
@@ -165,6 +167,7 @@ export interface Database {
           id?: string
           name?: string
           category?: 'bags'
+          workflow_template_id?: string | null
           status?: 'queued' | 'running' | 'partial_failed' | 'completed' | 'canceled'
           total_count?: number
           queued_count?: number
@@ -219,6 +222,67 @@ export interface Database {
           updated_at?: string
         }
       }
+      brand_profiles: {
+        Row: {
+          id: string
+          name: string
+          category: 'bags'
+          tone_profile: Json
+          visual_rules: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          category?: 'bags'
+          tone_profile?: Json
+          visual_rules?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          category?: 'bags'
+          tone_profile?: Json
+          visual_rules?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      workflow_templates: {
+        Row: {
+          id: string
+          name: string
+          category: 'bags'
+          brand_profile_id: string | null
+          template_payload: Json
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          category?: 'bags'
+          brand_profile_id?: string | null
+          template_payload?: Json
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          category?: 'bags'
+          brand_profile_id?: string | null
+          template_payload?: Json
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
       usage_logs: {
         Row: {
           id: string
@@ -263,4 +327,6 @@ export type Model = Database['public']['Tables']['models']['Row']
 export type UnlockRequest = Database['public']['Tables']['unlock_requests']['Row']
 export type BatchJob = Database['public']['Tables']['batch_jobs']['Row']
 export type BatchItem = Database['public']['Tables']['batch_items']['Row']
+export type BrandProfile = Database['public']['Tables']['brand_profiles']['Row']
+export type WorkflowTemplate = Database['public']['Tables']['workflow_templates']['Row']
 export type UsageLog = Database['public']['Tables']['usage_logs']['Row']

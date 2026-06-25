@@ -57,6 +57,9 @@ export function BatchProgressPanel({
 }: BatchProgressPanelProps) {
   const progress =
     batch.totalCount > 0 ? Math.round((batch.completedCount / batch.totalCount) * 100) : 0
+  const workflowTemplateLabel = batch.workflowTemplateId
+    ? '已套模板'
+    : '未套模板'
 
   return (
     <Card className="border-white/10 bg-white/[0.02]">
@@ -64,7 +67,9 @@ export function BatchProgressPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle>{batch.name}</CardTitle>
-            <CardDescription>{batch.totalCount} 个 SKU 子任务</CardDescription>
+            <CardDescription>
+              {batch.totalCount} 个 SKU 子任务 · {workflowTemplateLabel}
+            </CardDescription>
           </div>
           <Badge variant="outline" className={statusTone(batch.status)}>
             {statusLabel(batch.status)}

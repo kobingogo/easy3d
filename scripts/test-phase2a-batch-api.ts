@@ -229,6 +229,7 @@ class FakeQueryBuilder {
 
       if (this.table === 'batch_jobs') {
         row.category = row.category || 'bags'
+        row.workflow_template_id = row.workflow_template_id ?? null
         row.status = row.status || 'queued'
         row.total_count = row.total_count ?? 0
         row.queued_count = row.queued_count ?? 0

@@ -139,6 +139,7 @@ interface OptimizedPrompt {
 interface BuildInitialPhase1MetadataInput {
   uploadMode: Phase1UploadMode
   analysis: Pick<ProductAnalysis, 'category' | 'subcategory' | 'materials' | 'keyFeatures'>
+  workflowContext?: GenerateSmartWorkflowContext
 }
 
 interface GenerateSmartSuccessResponseInput {
@@ -159,6 +160,11 @@ interface GenerateSmartSuccessResponseInput {
 type Phase1TaskCreationFailureMetadata = Phase1ModelMetadata & {
   errorStage: 'task_creation'
   errorMessage?: string
+}
+
+interface GenerateSmartWorkflowContext {
+  workflowTemplateId?: string
+  brandProfileId?: string | null
 }
 
 type GenerateSmartTestOverrides = {
@@ -185,6 +191,8 @@ function buildInitialPhase1Metadata(
     category,
     presetKey: preset.key,
     uploadMode: input.uploadMode,
+    workflowTemplateId: input.workflowContext?.workflowTemplateId,
+    brandProfileId: input.workflowContext?.brandProfileId,
     analysisSummary: {
       subcategory: input.analysis.subcategory,
       materials: input.analysis.materials,
@@ -268,7 +276,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { imageUrl, images, config: customConfig } = body
+    const { imageUrl, images, config: customConfig, workflowContext } = body
 
     // 验证输入
     const isMultiview = images && images.length > 0
@@ -326,8 +334,25 @@ export async function POST(request: NextRequest) {
     const supabaseFactory = testOverrides.createClient ?? createClient
     const supabase = await supabaseFactory()
     const uploadMode: Phase1UploadMode = isMultiview ? 'multiview' : 'single'
+    const normalizedWorkflowContext: GenerateSmartWorkflowContext | undefined =
+      workflowContext && typeof workflowContext === 'object'
+        ? {
+            workflowTemplateId:
+              typeof workflowContext.workflowTemplateId === 'string'
+                ? workflowContext.workflowTemplateId.trim() || undefined
+                : undefined,
+            brandProfileId:
+              typeof workflowContext.brandProfileId === 'string'
+                ? workflowContext.brandProfileId.trim() || null
+                : workflowContext.brandProfileId === null
+                  ? null
+                  : undefined,
+          }
+        : undefined
+
     const initialMetadata = buildInitialPhase1Metadata({
       uploadMode,
+      workflowContext: normalizedWorkflowContext,
       analysis: {
         category: analysis.category,
         subcategory: analysis.subcategory,

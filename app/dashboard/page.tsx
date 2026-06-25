@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Layers3, Loader2, RefreshCcw, Sparkles } from 'lucide-react'
+import { Layers3, Loader2, RefreshCcw, Sparkles, SwatchBook } from 'lucide-react'
 import type { BatchJobSummary } from '@/lib/seller-workflow/batch-types'
 import { BatchCreateForm } from '@/components/batch/batch-create-form'
 import { BatchProgressPanel } from '@/components/batch/batch-progress-panel'
@@ -66,6 +66,12 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
+              <Link href="/dashboard/templates">
+                <Button variant="outline">
+                  <SwatchBook className="mr-2 h-4 w-4" />
+                  模板与品牌资产
+                </Button>
+              </Link>
               <Link href="/generate">
                 <Button variant="outline">
                   <Sparkles className="mr-2 h-4 w-4" />

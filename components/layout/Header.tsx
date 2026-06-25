@@ -18,6 +18,9 @@ export function Header() {
           <Link href="/dashboard" className="text-sm text-zinc-400 hover:text-neon-purple transition-colors">
             素材任务
           </Link>
+          <Link href="/dashboard/templates" className="text-sm text-zinc-400 hover:text-neon-blue transition-colors">
+            模板资产
+          </Link>
           <Link href="/#workflow" className="text-sm text-zinc-400 hover:text-neon-pink transition-colors">
             工作流
           </Link>

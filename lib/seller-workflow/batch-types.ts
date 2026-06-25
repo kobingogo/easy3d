@@ -26,6 +26,7 @@ export interface BatchJobSummary {
   id: string
   name: string
   category: 'bags'
+  workflowTemplateId: string | null
   status: BatchJobStatus
   totalCount: number
   queuedCount: number

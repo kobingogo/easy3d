@@ -6,6 +6,7 @@ interface BatchJobRow {
   id: string
   name: string
   category: 'bags'
+  workflow_template_id: string | null
   status: 'queued' | 'running' | 'partial_failed' | 'completed' | 'canceled'
   total_count: number
   queued_count: number
@@ -44,6 +45,7 @@ function toBatchSummary(row: BatchJobRow): BatchJobSummary {
     id: row.id,
     name: row.name,
     category: row.category,
+    workflowTemplateId: row.workflow_template_id ?? null,
     status: row.status,
     totalCount: row.total_count,
     queuedCount: row.queued_count,

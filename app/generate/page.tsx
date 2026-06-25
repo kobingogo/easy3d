@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, ImageIcon, Layers, LayoutDashboard, Loader2, PackageOpen, RefreshCw, Sparkles } from 'lucide-react'
 import { ModelViewer } from '@/components/3d/ModelViewer'
 import { AssetPackPreview } from '@/components/generate/asset-pack-preview'
+import { InitialWorkbenchTeaser } from '@/components/generate/initial-workbench-teaser'
 import { Phase1PresetCard } from '@/components/generate/phase1-preset-card'
 import { UnlockRequestForm, type UnlockRequestSubmitResult } from '@/components/generate/unlock-request-form'
 import { Badge } from '@/components/ui/badge'
@@ -828,6 +829,52 @@ export default function GeneratePage() {
     }
   }
 
+  const selectedInputCount = uploadMode === 'single' ? (uploadedFile ? 1 : 0) : multiViewImages.length
+  const requiredInputCount = uploadMode === 'single' ? 1 : 2
+  const isInputReady = selectedInputCount >= requiredInputCount
+  const workflowStage: 1 | 2 | 3 | 4 = (() => {
+    if (isProcessing) {
+      return 3
+    }
+
+    if (generation.status === 'completed' || generation.status === 'failed' || Boolean(currentModelId)) {
+      return 4
+    }
+
+    return isInputReady ? 2 : 1
+  })()
+
+  const renderUploadTabs = () => (
+    <Tabs
+      value={uploadMode}
+      onValueChange={(value) => setUploadMode(value as UploadMode)}
+      className="w-full"
+    >
+      <TabsList className="mb-4 grid w-full grid-cols-2">
+        <TabsTrigger value="single" className="flex items-center gap-2">
+          <ImageIcon className="h-4 w-4" />
+          单图起稿
+        </TabsTrigger>
+        <TabsTrigger value="multiview" className="flex items-center gap-2">
+          <Layers className="h-4 w-4" />
+          多视角推荐
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="single" className="mt-0">
+        <UploadZone onUpload={handleSingleUpload} maxFiles={1} disabled={isProcessing} />
+      </TabsContent>
+
+      <TabsContent value="multiview" className="mt-0">
+        <MultiViewUploadZone
+          key={multiViewZoneKey}
+          onUpload={handleMultiViewUpload}
+          disabled={isProcessing}
+        />
+      </TabsContent>
+    </Tabs>
+  )
+
   const renderResultPlaceholder = () => {
     if (generation.status === 'failed') {
       return (
@@ -887,7 +934,7 @@ export default function GeneratePage() {
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90" />
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.012]"
           style={{
             backgroundImage: `
               linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px),
@@ -896,9 +943,9 @@ export default function GeneratePage() {
             backgroundSize: '60px 60px',
           }}
         />
-        <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-primary/10 blur-[120px] animate-pulse" />
+        <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-primary/5 blur-[140px] animate-pulse" />
         <div
-          className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-cyan-500/10 blur-[120px] animate-pulse"
+          className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-cyan-500/5 blur-[140px] animate-pulse"
           style={{ animationDelay: '1s' }}
         />
       </div>
@@ -915,8 +962,9 @@ export default function GeneratePage() {
             </Badge>
             <h1 className="text-3xl font-bold md:text-4xl">卖家素材包生成台</h1>
             <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">
-              先聚焦包袋 / 小皮具。上传一组图片，系统会生成 3D 底模并整理淘宝主图、小红书封面、
-              抖音竖图与平台文案预览，再进入解锁交付流程。
+              {workflowStage === 1
+                ? '上传商品图，先拿到淘宝 / 小红书 / 抖音预览素材。'
+                : '系统会生成 3D 底模，并整理三平台预览素材与文案摘要。'}
             </p>
             <div className="mt-4">
               <Link href="/dashboard">
@@ -928,248 +976,248 @@ export default function GeneratePage() {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-          >
-            <Phase1PresetCard />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-          >
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardContent className="py-6">
-                <StepProgress steps={getSteps()} />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          {workflowStage >= 2 && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.18 }}
-              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
             >
-              <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">上传商品图片</CardTitle>
-                  <CardDescription>
-                    单图适合快速起稿；包袋更推荐多视角，更容易保留包型比例、五金与容量感。
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Tabs
-                    value={uploadMode}
-                    onValueChange={(value) => setUploadMode(value as UploadMode)}
-                    className="w-full"
-                  >
-                    <TabsList className="mb-4 grid w-full grid-cols-2">
-                      <TabsTrigger value="single" className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        单图起稿
-                      </TabsTrigger>
-                      <TabsTrigger value="multiview" className="flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        多视角推荐
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="single" className="mt-0">
-                      <UploadZone onUpload={handleSingleUpload} maxFiles={1} disabled={isProcessing} />
-                    </TabsContent>
-
-                    <TabsContent value="multiview" className="mt-0">
-                      <MultiViewUploadZone
-                        key={multiViewZoneKey}
-                        onUpload={handleMultiViewUpload}
-                        disabled={isProcessing}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-
-              <AnimatePresence>
-                {uploadMode === 'single' && previewUrl && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                  >
-                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">主图预览</CardTitle>
-                        <CardDescription>
-                          单图会先生成一版素材包预览，确认方向后再决定是否解锁完整交付。
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
-                          <img src={previewUrl} alt="上传预览" className="h-full w-full object-contain" />
-                          <AnimatePresence>
-                            {generation.status === 'completed' && (
-                              <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="absolute inset-0 flex items-center justify-center bg-emerald-500/20"
-                              >
-                                <CheckCircle2 className="h-16 w-16 text-emerald-400" />
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <motion.div className="flex gap-3">
-                {uploadMode === 'single' && uploadedFile && generation.status === 'idle' && (
-                  <Button className="flex-1" size="lg" onClick={handleSingleGenerate}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    生成素材包预览
-                  </Button>
-                )}
-
-                {uploadMode === 'multiview' && multiViewImages.length >= 2 && generation.status === 'idle' && (
-                  <Button className="flex-1" size="lg" onClick={handleMultiviewGenerate}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    使用 {multiViewImages.length} 张图生成素材包
-                  </Button>
-                )}
-
-                {isProcessing && (
-                  <Button variant="outline" size="lg" disabled className="flex-1">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {getStatusText()}
-                  </Button>
-                )}
-
-                {(generation.status === 'completed' || generation.status === 'failed') && (
-                  <Button variant="outline" size="lg" onClick={handleReset} className="flex-1">
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    重新生成
-                  </Button>
-                )}
-              </motion.div>
+              <Phase1PresetCard />
             </motion.div>
+          )}
 
+          {workflowStage >= 2 && (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.18 }}
-              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
             >
               <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                <CardContent className="py-6">
+                  <StepProgress steps={getSteps()} />
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {workflowStage === 1 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.16 }}
+              className="space-y-4"
+            >
+              <Card className="overflow-hidden border-primary/25 bg-card/55 backdrop-blur-sm">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-lg">素材包结果</CardTitle>
-                      <CardDescription>{getStatusText()}</CardDescription>
-                    </div>
-                    {getStatusBadge()}
-                  </div>
+                  <CardTitle className="text-lg">先上传 1 张商品图，10 秒内进入预览态</CardTitle>
+                  <CardDescription>支持单图快速起稿，也可切换多视角模式提升包型还原度。</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-5">
+                <CardContent>{renderUploadTabs()}</CardContent>
+              </Card>
+
+              <InitialWorkbenchTeaser />
+
+              <div className="rounded-2xl border border-border/50 bg-muted/30 px-4 py-3 text-sm text-muted-foreground backdrop-blur-sm">
+                Phase 1 当前聚焦“上传→预览→再决定是否解锁”，先让新用户低负担跑通第一条交付路径。
+              </div>
+            </motion.div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.18 }}
+                  className="space-y-4"
+                >
+                  <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">上传商品图片</CardTitle>
+                      <CardDescription>
+                        单图适合快速起稿；包袋更推荐多视角，更容易保留包型比例、五金与容量感。
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>{renderUploadTabs()}</CardContent>
+                  </Card>
+
                   <AnimatePresence>
-                    {isProcessing && (
+                    {uploadMode === 'single' && previewUrl && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
                       >
-                        <Progress value={generation.progress} className="h-2" />
-                        <p className="mt-2 text-center text-xs text-muted-foreground">
-                          {generation.taskType === 'multiview_to_model'
-                            ? '多视角模式正在整理更完整的包型与细节，预计 60-90 秒'
-                            : `正在整理首版素材包预览，预计还需 ${Math.max(1, Math.round((100 - generation.progress) * 0.5))} 秒`}
-                        </p>
+                        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg">主图预览</CardTitle>
+                            <CardDescription>
+                              单图会先生成一版素材包预览，确认方向后再决定是否解锁完整交付。
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
+                              <img src={previewUrl} alt="上传预览" className="h-full w-full object-contain" />
+                              <AnimatePresence>
+                                {generation.status === 'completed' && (
+                                  <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="absolute inset-0 flex items-center justify-center bg-emerald-500/20"
+                                  >
+                                    <CheckCircle2 className="h-16 w-16 text-emerald-400" />
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {renderResultPlaceholder()}
+                  <motion.div className="flex gap-3">
+                    {uploadMode === 'single' && uploadedFile && generation.status === 'idle' && (
+                      <Button className="flex-1" size="lg" onClick={handleSingleGenerate}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        生成素材包预览
+                      </Button>
+                    )}
 
-                  {resolvedModelUrl && (
-                    <div className="rounded-3xl border border-white/10 bg-background/35 p-4">
-                      <div className="mb-3 flex items-center justify-between gap-3">
+                    {uploadMode === 'multiview' && multiViewImages.length >= 2 && generation.status === 'idle' && (
+                      <Button className="flex-1" size="lg" onClick={handleMultiviewGenerate}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        使用 {multiViewImages.length} 张图生成素材包
+                      </Button>
+                    )}
+
+                    {isProcessing && (
+                      <Button variant="outline" size="lg" disabled className="flex-1">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {getStatusText()}
+                      </Button>
+                    )}
+
+                    {(generation.status === 'completed' || generation.status === 'failed') && (
+                      <Button variant="outline" size="lg" onClick={handleReset} className="flex-1">
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        重新生成
+                      </Button>
+                    )}
+                  </motion.div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.18 }}
+                  className="space-y-4"
+                >
+                  <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-medium text-foreground">3D 底模预览</h3>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                            3D 仅作为素材包的辅助底模参考，不再作为页面主交付物。
-                          </p>
+                          <CardTitle className="text-lg">素材包结果</CardTitle>
+                          <CardDescription>{getStatusText()}</CardDescription>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (!resolvedModelUrl) return
-                            const viewUrl =
-                              resolvedModelUrl.includes('tripo3d.com') || resolvedModelUrl.includes('tripo-data')
-                                ? `/api/proxy/model?url=${encodeURIComponent(resolvedModelUrl)}`
-                                : resolvedModelUrl
-                            window.open(viewUrl, '_blank', 'noopener,noreferrer')
-                          }}
-                        >
-                          查看底模
-                        </Button>
+                        {getStatusBadge()}
                       </div>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      <AnimatePresence>
+                        {isProcessing && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <Progress value={generation.progress} className="h-2" />
+                            <p className="mt-2 text-center text-xs text-muted-foreground">
+                              {generation.taskType === 'multiview_to_model'
+                                ? '多视角模式正在整理更完整的包型与细节，预计 60-90 秒'
+                                : `正在整理首版素材包预览，预计还需 ${Math.max(1, Math.round((100 - generation.progress) * 0.5))} 秒`}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
-                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
-                        <div className="aspect-square">
-                          <ModelViewer modelUrl={resolvedModelUrl} className="h-full w-full" />
+                      {renderResultPlaceholder()}
+
+                      {resolvedModelUrl && (
+                        <div className="rounded-3xl border border-white/10 bg-background/35 p-4">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div>
+                              <h3 className="text-sm font-medium text-foreground">3D 底模预览</h3>
+                              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                3D 仅作为素材包的辅助底模参考，不再作为页面主交付物。
+                              </p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (!resolvedModelUrl) return
+                                const viewUrl =
+                                  resolvedModelUrl.includes('tripo3d.com') || resolvedModelUrl.includes('tripo-data')
+                                    ? `/api/proxy/model?url=${encodeURIComponent(resolvedModelUrl)}`
+                                    : resolvedModelUrl
+                                window.open(viewUrl, '_blank', 'noopener,noreferrer')
+                              }}
+                            >
+                              查看底模
+                            </Button>
+                          </div>
+
+                          <div className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+                            <div className="aspect-square">
+                              <ModelViewer modelUrl={resolvedModelUrl} className="h-full w-full" />
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {modelDetailState.error && (
+                        <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+                          素材包详情拉取异常：{modelDetailState.error}
+                        </div>
+                      )}
+
+                      {unlockRequestState.error && (
+                        <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+                          解锁状态同步异常：{unlockRequestState.error}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {currentModelId && canRequestUnlock && (
+                    <div ref={unlockFormRef}>
+                      <UnlockRequestForm
+                        modelId={currentModelId}
+                        currentState={currentUnlockState}
+                        onSubmitted={handleUnlockSubmitted}
+                      />
                     </div>
                   )}
+                </motion.div>
+              </div>
 
-                  {modelDetailState.error && (
-                    <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
-                      素材包详情拉取异常：{modelDetailState.error}
-                    </div>
-                  )}
-
-                  {unlockRequestState.error && (
-                    <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
-                      解锁状态同步异常：{unlockRequestState.error}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {currentModelId && canRequestUnlock && (
-                <div ref={unlockFormRef}>
-                  <UnlockRequestForm
-                    modelId={currentModelId}
-                    currentState={currentUnlockState}
-                    onSubmitted={handleUnlockSubmitted}
-                  />
-                </div>
-              )}
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.28 }}
-            className="rounded-3xl border border-border/50 bg-muted/30 p-5 backdrop-blur-sm"
-          >
-            <h3 className="mb-3 font-medium text-foreground">Phase 1 使用提示</h3>
-            <ul className="space-y-2 text-sm leading-6 text-muted-foreground">
-              <li>当前只支持包袋 / 小皮具，不是报错限制，而是先把最常用卖家素材工作流做深。</li>
-              <li>单图适合快速验证方向；包袋更推荐多视角，尤其适合保留侧边厚度、提手和五金细节。</li>
-              <li>结果主区会先展示素材包预览与解锁状态，3D 底模会作为辅助信息保留在下方。</li>
-              <li>未解锁时只开放预览和申请；已解锁时会切到完整素材包交付入口，即使 ZIP 仍在接通中也不会退回 GLB 主按钮。</li>
-            </ul>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28 }}
+                className="rounded-3xl border border-border/50 bg-muted/30 p-5 backdrop-blur-sm"
+              >
+                <h3 className="mb-3 font-medium text-foreground">Phase 1 使用提示</h3>
+                <ul className="space-y-2 text-sm leading-6 text-muted-foreground">
+                  <li>当前只支持包袋 / 小皮具，不是报错限制，而是先把最常用卖家素材工作流做深。</li>
+                  <li>单图适合快速验证方向；包袋更推荐多视角，尤其适合保留侧边厚度、提手和五金细节。</li>
+                  <li>结果主区会先展示素材包预览与解锁状态，3D 底模会作为辅助信息保留在下方。</li>
+                  <li>未解锁时只开放预览和申请；已解锁时会切到完整素材包交付入口，即使 ZIP 仍在接通中也不会退回 GLB 主按钮。</li>
+                </ul>
+              </motion.div>
+            </>
+          )}
         </div>
       </div>
 

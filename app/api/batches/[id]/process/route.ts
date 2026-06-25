@@ -18,6 +18,7 @@ interface BatchJobRow {
   id: string
   name: string
   category: 'bags'
+  workflow_template_id: string | null
   status: 'queued' | 'running' | 'partial_failed' | 'completed' | 'canceled'
   total_count: number
   queued_count: number
@@ -37,6 +38,12 @@ interface ProcessingBatchItemRow {
   trip_task_id: string | null
 }
 
+interface WorkflowTemplateRow {
+  id: string
+  category: 'bags'
+  brand_profile_id: string | null
+}
+
 interface GenerateSmartResult {
   success: boolean
   modelId?: string
@@ -44,9 +51,17 @@ interface GenerateSmartResult {
   error?: string
 }
 
+interface BatchWorkflowContext {
+  workflowTemplateId: string
+  brandProfileId: string | null
+}
+
 type BatchProcessRouteTestOverrides = {
   createClient?: typeof createClient
-  invokeGenerateSmart?: (imageUrl: string) => Promise<GenerateSmartResult>
+  invokeGenerateSmart?: (
+    imageUrl: string,
+    workflowContext: BatchWorkflowContext | null
+  ) => Promise<GenerateSmartResult>
   syncTripoTaskStatus?: (taskId: string) => Promise<void>
 }
 
@@ -57,6 +72,7 @@ function toBatchSummary(row: BatchJobRow): BatchJobSummary {
     id: row.id,
     name: row.name,
     category: row.category,
+    workflowTemplateId: row.workflow_template_id ?? null,
     status: row.status,
     totalCount: row.total_count,
     queuedCount: row.queued_count,
@@ -71,11 +87,22 @@ function toBatchSummary(row: BatchJobRow): BatchJobSummary {
   }
 }
 
-async function defaultInvokeGenerateSmart(imageUrl: string): Promise<GenerateSmartResult> {
+async function defaultInvokeGenerateSmart(
+  imageUrl: string,
+  workflowContext: BatchWorkflowContext | null
+): Promise<GenerateSmartResult> {
   const response = await generateSmartPost(
     new NextRequest('http://localhost/api/generate-smart', {
       method: 'POST',
-      body: JSON.stringify({ imageUrl }),
+      body: JSON.stringify({
+        imageUrl,
+        workflowContext: workflowContext
+          ? {
+              workflowTemplateId: workflowContext.workflowTemplateId,
+              brandProfileId: workflowContext.brandProfileId,
+            }
+          : undefined,
+      }),
       headers: {
         'content-type': 'application/json',
       },
@@ -140,6 +167,30 @@ export async function POST(
       return NextResponse.json({ error: 'Batch already canceled' }, { status: 409 })
     }
 
+    let workflowContext: BatchWorkflowContext | null = null
+    if ((batch as BatchJobRow).workflow_template_id) {
+      const workflowTemplateId = (batch as BatchJobRow).workflow_template_id as string
+      const { data: template, error: templateError } = await supabase
+        .from('workflow_templates')
+        .select('id,category,brand_profile_id')
+        .eq('id', workflowTemplateId)
+        .single()
+
+      if (templateError || !template) {
+        return NextResponse.json({ error: 'Batch workflow template not found' }, { status: 400 })
+      }
+
+      const typedTemplate = template as WorkflowTemplateRow
+      if (typedTemplate.category !== (batch as BatchJobRow).category) {
+        return NextResponse.json({ error: 'Batch workflow template category mismatch' }, { status: 400 })
+      }
+
+      workflowContext = {
+        workflowTemplateId: typedTemplate.id,
+        brandProfileId: typedTemplate.brand_profile_id,
+      }
+    }
+
     const { data: processingItems, error: processingError } = await supabase
       .from('batch_items')
       .select('id,source_image_url,trip_task_id')
@@ -179,7 +230,7 @@ export async function POST(
 
     for (const item of claimed) {
       try {
-        const result = await invokeGenerateSmart(item.source_image_url)
+        const result = await invokeGenerateSmart(item.source_image_url, workflowContext)
         if (!result.success || !result.modelId || !result.taskId) {
           launchFailedCount += 1
           await markBatchItemFailed(supabase, {
